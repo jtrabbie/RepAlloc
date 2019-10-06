@@ -4,34 +4,65 @@ import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 
-city_list = ['Lei', 'Haa', 'Ams', 'Del']
-unique_pairs = list(itertools.combinations(city_list, r=2))
-num_pairs = len(list(unique_pairs))
-np.random.seed(1234)
+city_list = ['Lei', 'Haa', 'Ams', 'Del']  # list of cities
+city_pos = {'Lei': [0, 0],
+            'Haa': [10, 10],
+            'Ams': [0, 10],
+            'Del': [10, 0]}
+num_cities = len(city_list)  # number of customers (cities)
+unique_pairs = list(itertools.combinations(city_list, r=2))  # list of unique pair tuples
+num_pairs = len(list(unique_pairs))  # number of unique customer pairs
+num_nodes = 8  # number of non-customer nodes
+node_pos = {0: [1, 1],
+            1: [3, 2],
+            2: [8, 7],
+            3: [2, 4],
+            4: [3, 7],
+            5: [4, 5],
+            6: [8, 1],
+            7: [7, 4]}
+all_pos = {**city_pos, **node_pos}
+R = 1  # maximum number of repeaters
+M = num_pairs  # dummy parameter for linking constraint
+# Set fixed seed for reproducibility
+np.random.seed(13)
+# Variable map for referencing
+varmap = {}
 
 
 def create_graph(draw=False):
-    # Set fixed seed for reproducibility
-    np.random.seed(1234)
     # Create a graph and add random weights
-    graph = nx.fast_gnp_random_graph(n=20, p=0.4, seed=np.random)
-    # Change nodes to four Dutch cities
-    mapping = {3: city_list[0], 7: city_list[1], 4: city_list[2], 19: city_list[3]}
-    graph = nx.relabel_nodes(graph, mapping)
-    for (u, v) in graph.edges():
-        graph.edges[u, v]['weight'] = np.random.randint(1, 10)
+    graph = nx.fast_gnp_random_graph(n=num_nodes, p=0.8, seed=np.random)
+    for (i, j) in graph.edges():
+        # Add weight to each edge based on distance between nodes
+        graph.edges[i, j]['weight'] = compute_dist(i, j)
+    for city in city_list:
+        # Add four city nodes and randomly connect them to 3 other nodes
+        graph.add_node(city)
+        connected_edges = np.random.choice(range(num_nodes), 3, replace=False)
+        for edge in connected_edges:
+            graph.add_edge(city, edge, weight=compute_dist(city, edge))
+    color_map = ['blue'] * len(graph.nodes)
+    # Save seed for drawing
+    global numpy_seed
+    numpy_seed = np.random.get_state()
+    for idx, node in enumerate(graph.nodes):
+        if type(node) == str:
+            color_map[idx] = 'olive'
     if draw:
-        color_map = ['blue'] * len(graph.nodes)
-        for idx, node in enumerate(graph.nodes):
-            if type(node) == str:
-                color_map[idx] = 'olive'
         plt.subplots()
-        np.random.seed(1234)
         nx.draw(graph, with_labels=True, font_weight='bold',
-                node_color=color_map)
+                node_color=color_map, pos=all_pos)
         plt.show()
 
-    return graph
+    return graph, color_map
+
+
+def compute_dist(i, j):
+    # Compute the Pythagorean distance from one node to another
+    dx = np.abs(all_pos[i][0] - all_pos[j][0])
+    dy = np.abs(all_pos[i][1] - all_pos[j][1])
+    return np.round(np.sqrt(np.square(dx) + np.square(dy)))
 
 
 def solve_cplex(graph):
@@ -80,7 +111,7 @@ def compute_cost(graph, path):
 
 
 if __name__ == "__main__":
-    graph = create_graph(draw=True)
+    graph, color_map = create_graph(draw=True)
     print('Shortest Dijkstra paths:')
     tot_cost = 0
     for pair in unique_pairs:

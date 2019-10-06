@@ -24,8 +24,6 @@ node_pos = {0: [1, 1],
 all_pos = {**city_pos, **node_pos}
 R = 1  # maximum number of repeaters
 M = num_pairs  # dummy parameter for linking constraint
-# Set fixed seed for reproducibility
-np.random.seed(13)
 # Variable map for referencing
 varmap = {}
 
@@ -68,45 +66,58 @@ def compute_dist(i, j):
 def solve_cplex(graph):
     # Create new CPLEX model
     prob = cplex.Cplex()
-    #prob.set_log_stream(None)
-    #prob.set_error_stream(None)
-    #prob.set_warning_stream(None)
-    #prob.set_results_stream(None)
+    prob.set_log_stream(None)
+    prob.set_error_stream(None)
+    prob.set_warning_stream(None)
+    prob.set_results_stream(None)
     # Set objective to minimization
     prob.objective.set_sense(prob.objective.sense.minimize)
     add_constraints(prob)
+    #prob.write('edge_form.lp')
     # Add variables column wise
     add_variables(prob=prob, graph=graph)
     # Solve for the optimal solution and print
-    prob.write('test_after_colgen.lp')
+    #prob.write('edge_form_with_vars.lp')
     print('Total number of variables:', prob.variables.get_num())
     prob.solve()
     print()
     chosen_paths = []
+    repeater_nodes = []
     for i, x in enumerate(prob.solution.get_values()):
         if x > 1e-5:
             var_name = prob.variables.get_names(i)
             var_ind = prob.variables.get_indices(var_name)
-            path_tuple = varmap[var_ind]
-            chosen_paths.append(path_tuple)
+            if "y" in var_name:
+                repeater_nodes.append(int(var_name[2:]))
+            else:
+                path_tuple = varmap[var_ind]
+                chosen_paths.append(path_tuple)
+    if len(repeater_nodes) > 0:
+        print("Repeater(s) chosen: {}".format(repeater_nodes))
 
+    tot_cost = 0
     for q in unique_pairs:
-        str = ["Path from {} to {}:".format(q[0], q[1])]
-        for idx in range(len(chosen_paths)):
-            if chosen_paths[idx][0][0] == q[0]:  # Path starts with source city
-                path, cost = chosen_paths.pop(idx)
-                break
-        for idx in range(len(chosen_paths)):
-            if chosen_paths[idx][0][0] == path[-1]:
-                addpath, addcost = chosen_paths.pop(idx)
-                cost += addcost
-                path.remove(path[-1])
-                path.extend(addpath)
-                break
-        str.extend(path)
-        print(str)
+        string = "Path from {} to {}: ".format(q[0], q[1])
+        edges_current_pair = []
+        [edges_current_pair.append(tup) for tup in chosen_paths if tup[0] == q]
+        path = []
+        cost = 0
+        num_edges = 0
+        while num_edges < len(edges_current_pair):
+            for edge in edges_current_pair:
+                if len(path) == 0 and edge[1][0] == q[0]:  # Initial edge from source
+                    path.extend(edge[1])
+                    cost += edge[2]
+                    num_edges += 1
+                elif len(path) > 0 and edge[1][0] == path[-1]:  # Extension of current path
+                    path = path[0:-1]
+                    path.extend(edge[1])
+                    cost += edge[2]
+                    num_edges += 1
+        print("Optimal path for pair {}: {}, with cost {}".format(q, path, cost))
 
     print('Optimal objective value:', prob.solution.get_objective_value())
+    return prob.solution.get_objective_value()
 
 
 def add_constraints(prob):
@@ -120,7 +131,19 @@ def add_constraints(prob):
         prob.linear_constraints.add(rhs=[0] * num_nodes, senses=['E'] * num_nodes, names=flow_cons_names)
         # Each sink should have exactly one ingoing arc
         prob.linear_constraints.add(rhs=[-1], senses=['E'], names=['SinkCon_' + pairname])
-    # prob.write('test.lp')
+        # Constraints for linking path variables to repeater variables
+    link_con_names = ['LinkCon_' + str(s) for s in range(num_nodes)]
+    # Constraints for linking the x and y variables
+    prob.linear_constraints.add(rhs=[0] * num_nodes, senses=['L'] * num_nodes, names=link_con_names)
+    # Add repeater variables with a column in the linking constraint
+    var_names = ['y_' + str(s) for s in range(num_nodes)]
+    link_constr_column = []
+    [link_constr_column.extend([cplex.SparsePair(ind=['LinkCon_' + str(i)], val=[-M])]) for i in range(num_nodes)]
+    prob.variables.add(obj=[0] * num_nodes, names=var_names, lb=[0] * num_nodes, ub=[1] * num_nodes,
+                       types=['B'] * num_nodes, columns=link_constr_column)
+    # Constraint for maximum number of repeaters
+    constr = [cplex.SparsePair(ind=range(num_nodes), val=[1.0] * num_nodes)]
+    prob.linear_constraints.add(lin_expr=constr, rhs=[R], names=['RepCon'], senses=['L'])
 
 
 def add_variables(prob, graph):
@@ -129,39 +152,35 @@ def add_variables(prob, graph):
         pairname = q[0] + "_" + q[1]
         for i in graph.nodes():
             for j in graph.nodes():
-                if (type(i) != int and i not in q) or (type(j) != int and j not in q) or i == j:
-                    # Skip paths from/to cities that are not considered in this pair
+                if i == j or i == q[1] or j == q[0] or \
+                        (type(i) != int and i not in q) or (type(j) != int and j not in q):
+                    # Skip paths where source and sink are equal or paths that start (end) at the sink (source)
+                    # And also skip paths that start or end at a city not in the currently considered pair
                     pass
                 else:
                     sp = nx.shortest_path(graph, source=i, target=j, weight='weight')
                     path_cost, _ = compute_path_cost(graph, sp)
+                    if type(j) == int:
+                        path_cost -= 1
                     if i == q[0]:  # Node i is the source
                         if j == q[1]:  # Node j is the sink
                             column = [cplex.SparsePair(ind=['SourceCon_' + pairname,
                                                             'SinkCon_' + pairname], val=[1.0, -1.0])]
                         else:  # Node j is a regular node
                             column = [cplex.SparsePair(ind=['SourceCon_' + pairname,
-                                                            'FlowCon_' + pairname + "_" + str(j)], val=[1.0, -1.0])]
-                    elif i == q[1]:  # Node i is the sink
-                        if j == q[0]:  # Node j is the source
-                            column = [cplex.SparsePair(ind=['SourceCon_' + pairname,
-                                                            'SinkCon_' + pairname], val=[-1.0, 1.0])]
-                        else:  # Node j is a regular node
-                            column = [cplex.SparsePair(ind=['SinkCon_' + pairname,
-                                                            'FlowCon_' + pairname + "_" + str(j)], val=[1.0, -1.0])]
+                                                            'FlowCon_' + pairname + "_" + str(j),
+                                                            'LinkCon_' + str(j)], val=[1.0, -1.0, 1.0])]
                     else:  # Node i is a regular node
-                        if j == q[0]:  # Node j is the source
-                            column = [cplex.SparsePair(ind=['SourceCon_' + pairname,
-                                                            'FlowCon_' + pairname + "_" + str(i)], val=[-1.0, 1.0])]
-                        elif j == q[1]:  # Node j is the sink
+                        if j == q[1]:  # Node j is the sink
                             column = [cplex.SparsePair(ind=['SinkCon_' + pairname,
                                                             'FlowCon_' + pairname + "_" + str(i)], val=[-1.0, 1.0])]
                         else:  # Node j is also a regular node
                             column = [cplex.SparsePair(ind=['FlowCon_' + pairname + "_" + str(i),
-                                                            'FlowCon_' + pairname + "_" + str(j)], val=[1.0, -1.0])]
+                                                            'FlowCon_' + pairname + "_" + str(j),
+                                                            'LinkCon_' + str(j)], val=[1.0, -1.0, 1.0])]
                     cplex_var = prob.variables.add(obj=[path_cost], lb=[0.0], columns=column,
                                                    names=["x_" + pairname + "_" + str(i) + "," + str(j)])
-                    varmap[cplex_var[0]] = (sp, path_cost)
+                    varmap[cplex_var[0]] = (q, sp, path_cost)
 
 
 def compute_path_cost(graph, path):
@@ -176,15 +195,18 @@ def compute_path_cost(graph, path):
 
 
 if __name__ == "__main__":
-    graph = create_graph(draw=True)
-    solve_cplex(graph=graph)
-    tot_cost = 0
-    for pair in unique_pairs:
-        shortest_path = nx.shortest_path(graph, source=pair[0], target=pair[1], weight='weight')
-        cost, _ = compute_path_cost(graph, shortest_path)
-        tot_cost += cost
-        print(shortest_path, 'with cost', cost)
-    print('Sum of shortest path costs:', tot_cost)
+    np.random.seed(123)
+    graph = create_graph(draw=False)
+    obj_val = solve_cplex(graph=graph)
+    if R == 0:
+        tot_cost = 0
+        for pair in unique_pairs:
+            shortest_path = nx.shortest_path(graph, source=pair[0], target=pair[1], weight='weight')
+            cost, _ = compute_path_cost(graph, shortest_path)
+            tot_cost += cost
+            #print(shortest_path, 'with cost', cost)
+        if tot_cost != obj_val:
+            raise RuntimeError("Critical Error! Shortest Dijkstra path costs do not equal CPLEX cost!")
 
 
 

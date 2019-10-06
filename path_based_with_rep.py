@@ -5,27 +5,41 @@ import numpy as np
 import itertools
 
 city_list = ['Lei', 'Haa', 'Ams', 'Del']  # list of cities
+city_pos = {'Lei': [0, 0],
+            'Haa': [10, 10],
+            'Ams': [0, 10],
+            'Del': [10, 0]}
 num_cities = len(city_list)  # number of customers (cities)
 unique_pairs = list(itertools.combinations(city_list, r=2))  # list of unique pair tuples
 num_pairs = len(list(unique_pairs))  # number of unique customer pairs
-num_nodes = 16  # number of non-customer nodes
+num_nodes = 8  # number of non-customer nodes
+node_pos = {0: [1, 1],
+            1: [3, 2],
+            2: [8, 7],
+            3: [2, 4],
+            4: [3, 7],
+            5: [4, 5],
+            6: [8, 1],
+            7: [7, 4]}
+all_pos = {**city_pos, **node_pos}
 R = 1  # maximum number of repeaters
 M = num_pairs  # dummy parameter for linking constraint
-# Set fixed seed for reproducibility
-np.random.seed(1234)
 # Variable map for referencing
 varmap = {}
 
 
 def create_graph(draw=False):
     # Create a graph and add random weights
-    graph = nx.fast_gnp_random_graph(n=num_cities + num_nodes, p=0.4, seed=np.random)
-    # Change nodes to four Dutch cities
-    mapping = {3: city_list[0], 4: city_list[2], 5: 3, 6: 4, 7: city_list[1], 8: 5, 9: 6, 10: 7,
-               11: 8, 12: 9, 13: 10, 14: 11, 15: 12, 16: 13, 17: 14, 18: 15, 19: city_list[3], 20: 16}
-    graph = nx.relabel_nodes(graph, mapping)
-    for (u, v) in graph.edges():
-        graph.edges[u, v]['weight'] = np.random.randint(1, 10)
+    graph = nx.fast_gnp_random_graph(n=num_nodes, p=0.8, seed=np.random)
+    for (i, j) in graph.edges():
+        # Add weight to each edge based on distance between nodes
+        graph.edges[i, j]['weight'] = compute_dist(i, j)
+    for city in city_list:
+        # Add four city nodes and randomly connect them to 3 other nodes
+        graph.add_node(city)
+        connected_edges = np.random.choice(range(num_nodes), 3, replace=False)
+        for edge in connected_edges:
+            graph.add_edge(city, edge, weight=compute_dist(city, edge))
     color_map = ['blue'] * len(graph.nodes)
     # Save seed for drawing
     global numpy_seed
@@ -36,13 +50,20 @@ def create_graph(draw=False):
     if draw:
         plt.subplots()
         nx.draw(graph, with_labels=True, font_weight='bold',
-                node_color=color_map)
+                node_color=color_map, pos=all_pos)
         plt.show()
 
-    return graph, color_map, mapping
+    return graph, color_map
 
 
-def solve_cplex(graph, color_map, mapping):
+def compute_dist(i, j):
+    # Compute the Pythagorean distance from one node to another
+    dx = np.abs(all_pos[i][0] - all_pos[j][0])
+    dy = np.abs(all_pos[i][1] - all_pos[j][1])
+    return np.round(np.sqrt(np.square(dx) + np.square(dy)))
+
+
+def solve_cplex(graph, color_map, draw):
     # Create new CPLEX model
     prob = cplex.Cplex()
     #prob.set_log_stream(None)
@@ -55,7 +76,7 @@ def solve_cplex(graph, color_map, mapping):
     # Add variables column wise
     add_variables(prob=prob, graph=graph)
     # Solve for the optimal solution and print
-    prob.write('test_after_colgen.lp')
+    #prob.write('test_after_colgen.lp')
     print('Total number of variables:', prob.variables.get_num())
     prob.solve()
     print()
@@ -72,17 +93,16 @@ def solve_cplex(graph, color_map, mapping):
 
     print('Optimal objective value:', prob.solution.get_objective_value())
 
-    # Draw graph with repeater placement
-    plt.subplot(211)
-    np.random.set_state(numpy_seed)
-    nx.draw(graph, with_labels=True, font_weight='bold',
-            node_color=color_map)
-    color_map[list(mapping.keys())[list(mapping.values()).index(rep_node_chosen)]] = 'pink'
-    plt.subplot(212)
-    np.random.set_state(numpy_seed)
-    nx.draw(graph, with_labels=True, font_weight='bold',
-            node_color=color_map, seed=123)
-    plt.show()
+    if draw:
+        # Draw graph with repeater placement
+        plt.subplot(211)
+        np.random.set_state(numpy_seed)
+        nx.draw(graph, with_labels=True, font_weight='bold', node_color=color_map)
+        #color_map[list(mapping.keys())[list(mapping.values()).index(rep_node_chosen)]] = 'pink'
+        plt.subplot(212)
+        np.random.set_state(numpy_seed)
+        nx.draw(graph, with_labels=True, font_weight='bold', node_color=color_map, seed=123)
+        plt.show()
 
 
 def add_constraints(prob):
@@ -104,7 +124,7 @@ def add_constraints(prob):
     pair_con_names = ['PairCon_' + ''.join(pair) for pair in unique_pairs]
     prob.linear_constraints.add(rhs=[1] * num_pairs, senses=['G'] * num_pairs, names=pair_con_names)
     # Save formulation to .lp file
-    prob.write('test.lp')
+    #prob.write('test.lp')
 
 
 def add_variables(prob, graph):
@@ -123,9 +143,9 @@ def add_variables(prob, graph):
             for node in path[1:-1]:
                 column_contributions = [cplex.SparsePair(ind=['LinkCon_'+str(node), 'PairCon_' + ''.join(pair)],
                                                          val=[1.0, 1.0])]
-                cplex_var = prob.variables.add(obj=[cost-1], lb=[0.0], ub=[1.0], types=['B'],
+                cplex_var = prob.variables.add(obj=[cost - 1], lb=[0.0], ub=[1.0], types=['B'],
                                    columns=column_contributions)
-                varmap[cplex_var[0]] = path_tuple
+                varmap[cplex_var[0]] = (path, cost - 1)
 
 
 def get_all_paths(graph, source, target, cutoff):
@@ -169,5 +189,6 @@ def get_all_paths(graph, source, target, cutoff):
 
 
 if __name__ == "__main__":
-    graph, color_map, mapping = create_graph(draw=False)
-    solve_cplex(graph=graph, color_map=color_map, mapping=mapping)
+    np.random.seed(123)
+    graph, color_map = create_graph(draw=False)
+    solve_cplex(graph=graph, color_map=color_map, draw=False)
