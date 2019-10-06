@@ -7,6 +7,7 @@ import itertools
 city_list = ['Lei', 'Haa', 'Ams', 'Del']
 unique_pairs = list(itertools.combinations(city_list, r=2))
 num_pairs = len(list(unique_pairs))
+np.random.seed(1234)
 
 
 def create_graph(draw=False):
@@ -18,17 +19,14 @@ def create_graph(draw=False):
     mapping = {3: city_list[0], 7: city_list[1], 4: city_list[2], 19: city_list[3]}
     graph = nx.relabel_nodes(graph, mapping)
     for (u, v) in graph.edges():
-        if u in city_list and v in city_list:
-            # Set weight from city to city directly to inf
-            graph.edges[u, v]['weight'] = np.inf
-        else:
-            graph.edges[u, v]['weight'] = np.random.randint(1, 10)
+        graph.edges[u, v]['weight'] = np.random.randint(1, 10)
     if draw:
         color_map = ['blue'] * len(graph.nodes)
         for idx, node in enumerate(graph.nodes):
             if type(node) == str:
                 color_map[idx] = 'olive'
         plt.subplots()
+        np.random.seed(1234)
         nx.draw(graph, with_labels=True, font_weight='bold',
                 node_color=color_map)
         plt.show()
@@ -82,7 +80,7 @@ def compute_cost(graph, path):
 
 
 if __name__ == "__main__":
-    graph = create_graph(draw=False)
+    graph = create_graph(draw=True)
     print('Shortest Dijkstra paths:')
     tot_cost = 0
     for pair in unique_pairs:

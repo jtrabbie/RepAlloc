@@ -13,6 +13,8 @@ R = 1  # maximum number of repeaters
 M = num_pairs  # dummy parameter for linking constraint
 # Set fixed seed for reproducibility
 np.random.seed(1234)
+# Variable map for referencing
+varmap = {}
 
 
 def create_graph(draw=False):
@@ -43,6 +45,10 @@ def create_graph(draw=False):
 def solve_cplex(graph, color_map, mapping):
     # Create new CPLEX model
     prob = cplex.Cplex()
+    #prob.set_log_stream(None)
+    #prob.set_error_stream(None)
+    #prob.set_warning_stream(None)
+    #prob.set_results_stream(None)
     # Set objective to minimization
     prob.objective.set_sense(prob.objective.sense.minimize)
     add_constraints(prob)
@@ -52,13 +58,17 @@ def solve_cplex(graph, color_map, mapping):
     prob.write('test_after_colgen.lp')
     print('Total number of variables:', prob.variables.get_num())
     prob.solve()
+    print()
     for i, x in enumerate(prob.solution.get_values()):
-        if x > 0.0:
+        if x > 1e-5:
             var_name = prob.variables.get_names(i)
+            var_ind = prob.variables.get_indices(var_name)
+            path_tuple = varmap.get(var_ind)
             if 'y' in var_name:
                 rep_node_chosen = int(var_name[2::])
+                print('Selected repeater node:', rep_node_chosen)
             else:
-                print('Chosen path', x, 'x:', var_name, 'with cost', prob.objective.get_linear(var_name))
+                print('Chosen path', x, 'x:', path_tuple[0], 'with cost', path_tuple[1])
 
     print('Optimal objective value:', prob.solution.get_objective_value())
 
@@ -73,6 +83,7 @@ def solve_cplex(graph, color_map, mapping):
     nx.draw(graph, with_labels=True, font_weight='bold',
             node_color=color_map, seed=123)
     plt.show()
+
 
 def add_constraints(prob):
     # Constraints for linking path variables to repeater variables
@@ -91,7 +102,7 @@ def add_constraints(prob):
     prob.linear_constraints.add(lin_expr=constr, rhs=[R], names=['RepCon'], senses=['L'])
     # Constraints for connecting each pair exactly once
     pair_con_names = ['PairCon_' + ''.join(pair) for pair in unique_pairs]
-    prob.linear_constraints.add(rhs=[1] * num_pairs, senses=['E'] * num_pairs, names=pair_con_names)
+    prob.linear_constraints.add(rhs=[1] * num_pairs, senses=['G'] * num_pairs, names=pair_con_names)
     # Save formulation to .lp file
     prob.write('test.lp')
 
@@ -99,41 +110,64 @@ def add_constraints(prob):
 def add_variables(prob, graph):
     for idx, pair in enumerate(unique_pairs):
         # Generate all paths with a maximum length of 4
-        paths = nx.all_simple_paths(graph, source=pair[0], target=pair[1], cutoff=5)
-        for path in paths:
-            if sum(isinstance(node, str) for node in path) == 2 and len(path) > 2:
-                # Path does not visit any cities intermediately and has length of at least 3
-                cost, pathname = compute_cost(graph, path)
-                # Add path without repeaters
-                column = [cplex.SparsePair(ind=['PairCon_' + ''.join(pair)], val=[1.0])]
-                prob.variables.add(obj=[cost], lb=[0.0], ub=[1.0], types=['B'],
-                                   columns=column, names=[pathname])
-                # Now iterate and generate paths with repeater
-                for node in path[1:-1]:
-                    rep_pathname = pathname + '___R' + str(node)
-                    column_contributions = [cplex.SparsePair(ind=['LinkCon_'+str(node), 'PairCon_' + ''.join(pair)],
-                                                             val=[1.0, 1.0])]
-                    prob.variables.add(obj=[cost-10], lb=[0.0], ub=[1.0], types=['B'],
-                                       columns=column_contributions, names=[rep_pathname])
+        paths = get_all_paths(graph, source=pair[0], target=pair[1], cutoff=5)
+        for path_tuple in paths:
+            path = path_tuple[0]
+            cost = path_tuple[1]
+            # Add path without repeaters
+            column = [cplex.SparsePair(ind=['PairCon_' + ''.join(pair)], val=[1.0])]
+            cplex_var = prob.variables.add(obj=[cost], lb=[0.0], ub=[1.0], types=['B'],
+                               columns=column)
+            varmap[cplex_var[0]] = path_tuple
+            # Now iterate and generate paths with repeater
+            for node in path[1:-1]:
+                column_contributions = [cplex.SparsePair(ind=['LinkCon_'+str(node), 'PairCon_' + ''.join(pair)],
+                                                         val=[1.0, 1.0])]
+                cplex_var = prob.variables.add(obj=[cost-1], lb=[0.0], ub=[1.0], types=['B'],
+                                   columns=column_contributions)
+                varmap[cplex_var[0]] = path_tuple
 
 
-def compute_cost(graph, path):
+def get_all_paths(graph, source, target, cutoff):
+    '''Adaptation of networkx code for finding the shortest path.
+    Additional functionality:
+     - Returns the cost of a path;
+     - Avoids visiting cities intermediately.
+    '''
+    paths = []
+    if cutoff < 1:
+        return
+    # Set the status to visited of all cities except the target by making a shallow copy
+    visited = [source]
+    stack = [iter(graph[source])]
     cost = 0
-    pathname = 'x'
-    for i in range(len(path)-1):
-        cost += graph[path[i]][path[i+1]]['weight']
-        pathname += '_' + str(path[i])
+    while stack:
+        children = stack[-1]
+        child = next(children, None)
+        if child is None:
+            if len(visited) > 1:
+                cost -= graph[visited[-2]][visited[-1]]['weight']
+            stack.pop()
+            visited.pop()
+        elif len(visited) < cutoff:
+            if child == target and len(visited) > 1:
+                paths.append((visited + [target],
+                              cost + graph[visited[-1]][target]['weight']))
+            elif child not in visited and type(child) != str:
+                cost += graph[visited[-1]][child]['weight']
+                visited.append(child)
+                stack.append(iter(graph[child]))
+        else:  # len(visited) == cutoff:
+            if child == target or target in children:
+                paths.append((visited + [target],
+                              cost + graph[visited[-1]][target]['weight']))
+            cost -= graph[visited[-2]][visited[-1]]['weight']
+            stack.pop()
+            visited.pop()
 
-    pathname += '_' + str(path[-1])
-    return cost, pathname
+    return paths
 
 
 if __name__ == "__main__":
     graph, color_map, mapping = create_graph(draw=False)
     solve_cplex(graph=graph, color_map=color_map, mapping=mapping)
-
-
-
-
-
-
