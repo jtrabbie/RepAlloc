@@ -1,8 +1,10 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+import time
+import datetime
 
-from edge_based_with_rep import EdgeBasedProgram
+from programs import EdgeBasedProgram, PathBasedProgram
 
 
 def read_graph(file, draw=False):
@@ -30,7 +32,7 @@ def read_graph(file, draw=False):
     if draw:
         plt.figure(1)
         nx.draw(G, with_labels=True, font_weight='bold', pos=pos, node_color=color_map, node_size=200)
-        plt.show(dpi=9000)
+        plt.show()
 
     return G
 
@@ -82,7 +84,7 @@ def create_graph(draw=False, node_pos=None):
 
 
 if __name__ == "__main__":
-    G = read_graph("Surfnet.gml", draw=True)
+    # G = read_graph("Colt.gml", draw=True)
     np.random.seed(188)
     node_pos = {'Lei': [0, 0],
                 'Haa': [10, 10],
@@ -96,9 +98,13 @@ if __name__ == "__main__":
                 5: [4, 5],
                 6: [8, 1],
                 7: [7, 4]}
-    # G = create_graph(draw=True, node_pos=node_pos)
+    G = create_graph(draw=True, node_pos=node_pos)
     R = 2
-    ebp = EdgeBasedProgram(G, R)
-    ebp.solve()
+    starttime = time.time()
+    # prog = EdgeBasedProgram(G, R)
+    prog = PathBasedProgram(G, R)
+    endtime = time.time()
+    print("Constructing graph takes: {}".format(datetime.timedelta(seconds=endtime - starttime)))
+    prog.solve()
 
 
