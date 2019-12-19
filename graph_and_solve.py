@@ -1,10 +1,11 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-import time
-import datetime
+import pandas as pd
+from datetime import datetime
 
 from programs import EdgeBasedProgram, PathBasedProgram
+from program_alt_obj import MinMaxEdgeBasedProgram, MinRepEdgeBasedProgram
 
 
 def read_graph(file, draw=False):
@@ -12,14 +13,20 @@ def read_graph(file, draw=False):
     file_name = file[0:-4]
     if file_name == 'Surfnet':
         # We are dealing with the Netherlands dataset
-        city_list = ["Vlissingen", "Groningen", "Den_Haag", "Maastricht"]
+        city_list = ["Vlissingen", "Groningen", "DenHaag", "Maastricht"]
     elif file_name == 'Colt':
         # This is the European dataset
-        city_list = ['Dublin', 'Bordeaux', 'Trieste', 'The_Hague', 'Prague']
+        # QIA Members: IQOQI, UOI (Innsbruck), CNRS (Paris), ICFO (Barcelona), IT (Lisbon),
+        #              MPQ (Garching [DE] -> Munich), NBI (Copenhagen), QuTech (Delft -> The Hague), UOB (Basel),
+        #              UOG (Geneva)
+        # NOTE: Graching replaced by Munic, Delft by The Hague
+        city_list = ['Innsbruck', 'Paris', 'Barcelona', 'Lisbon', 'Copenhagen', 'TheHague', 'Basel', 'Geneva',
+                     'Stuttgart']
     else:
         raise NotImplementedError("Dataset {} not implemented (no city list defined)".format(file_name))
     pos = {}
     color_map = []
+
     for node, nodedata in G.nodes.items():
         pos[node] = [nodedata['Longitude'], nodedata['Latitude']]
         if node in city_list:
@@ -84,7 +91,6 @@ def create_graph(draw=False, node_pos=None):
 
 
 if __name__ == "__main__":
-    # G = read_graph("Colt.gml", draw=True)
     np.random.seed(188)
     node_pos = {'Lei': [0, 0],
                 'Haa': [10, 10],
@@ -98,13 +104,36 @@ if __name__ == "__main__":
                 5: [4, 5],
                 6: [8, 1],
                 7: [7, 4]}
-    G = create_graph(draw=True, node_pos=node_pos)
-    R = 2
-    starttime = time.time()
-    # prog = EdgeBasedProgram(G, R)
-    prog = PathBasedProgram(G, R)
-    endtime = time.time()
-    print("Constructing graph takes: {}".format(datetime.timedelta(seconds=endtime - starttime)))
-    prog.solve()
+    # G = create_graph(node_pos=node_pos, draw=False)
+    filename = "Colt.gml"
+    G = read_graph(filename, draw=False)
+    R_max = 1
+    L_max = 1
+    prog = MinRepEdgeBasedProgram(graph=G, num_allowed_repeaters=R_max, L_max=L_max, alpha=0, read_from_file=True)
+    prog.update_parameters(L_max_new=1000, R_max_new=6, alpha_new=1/75000)
+    print(prog.solve(draw_solution=True))
+    # dict_list = []
+    # for alpha in [0, 1 / 75000]:
+    #     for L_max in range(550, 1275, 25):
+    #         R_max = 6
+    #         prog.update_parameters(L_max_new=L_max, R_max_new=R_max, alpha_new=alpha)
+    #         output = prog.solve()
+    #         print(output)
+    #         dict_list.append(output)
+    # final_dict = {k: [d[k] for d in dict_list] for k in dict_list[0]}
+    # now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
+    # pd.DataFrame(final_dict).to_csv('./data/repAllocData_{}_{}.csv'.format(filename[0:-4], now), index=False)
+    # print(prog.solve())
+    # prog.update_parameters(L_max_new=100, R_max_new=10, alpha_new=1/2500)
+    # print(prog.solve())
+    # for L_max in range(65, 105, 5):
+    #     for R_max in range(10, 11):
+    #         prog.update_lmax_rmax(L_max_new=L_max, R_max_new=R_max)
+    #         # print("Running program for L_max = {} and R_max = {}".format(L_max, R_max))
+    #         print(prog.solve())
+
+    # prog = EdgeBasedProgram(G, R_max)
+    # prog = MinMaxEdgeBasedProgram(G, R_max)
+    # prog = PathBasedProgram(G, R_max)
 
 
