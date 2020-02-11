@@ -1,6 +1,7 @@
 from programs import Program
 import cplex
 import networkx as nx
+import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 
@@ -185,7 +186,7 @@ class MinRepEdgeBasedProgram(Program):
             pairname = q[0] + "_" + q[1]
             # Each source should have exactly one outgoing arc
             prob.linear_constraints.add(rhs=[1], senses=['E'], names=['SourceCon_' + pairname])
-            flow_cons_names = ['FlowCon_' + pairname + "_" + s for s in self.graph_container.nodes]
+            flow_cons_names = ['FlowCon_' + pairname + "_" + s for s in self.graph_container.possible_rep_nodes]
             # Each regular node should have equal inflow and outflow
             prob.linear_constraints.add(rhs=[0] * num_nodes, senses=['E'] * num_nodes, names=flow_cons_names)
             # Each sink should have exactly one ingoing arc
@@ -203,15 +204,15 @@ class MinRepEdgeBasedProgram(Program):
             # Constraint for maximum number of repeaters per (s,t) pair
             prob.linear_constraints.add(rhs=[self.R_max], senses=['L'], names=['MaxRepCon_' + pairname])
         # Constraints for linking path variables to repeater variables
-        link_con_names = ['LinkCon_' + s for s in self.graph_container.nodes]
+        link_con_names = ['LinkCon_' + s for s in self.graph_container.possible_rep_nodes]
         # Constraints for linking the x and y variables
         prob.linear_constraints.add(rhs=[0] * num_nodes, senses=['L'] * num_nodes, names=link_con_names)
         # Add repeater variables with a column in the linking constraint
-        var_names = ['y_' + s for s in self.graph_container.nodes]
+        var_names = ['y_' + s for s in self.graph_container.possible_rep_nodes]
         # Node that if we want to add 6 variables, we need to have 6 separate SparsePairs
         link_constr_column = []
         [link_constr_column.extend([cplex.SparsePair(ind=['LinkCon_' + i],
-                                                     val=[-self.M])]) for i in self.graph_container.nodes]
+                                                     val=[-self.M])]) for i in self.graph_container.possible_rep_nodes]
         # Note that these variables have a lower bound of 0 by default
         prob.variables.add(obj=[1] * num_nodes, names=var_names, ub=[1] * num_nodes, types=['B'] * num_nodes,
                            columns=link_constr_column)
@@ -342,11 +343,10 @@ class MinRepEdgeBasedProgram(Program):
                         path = path[0:-1]
                         path.extend(edge[1])
                         cost += edge[2]
-            #print(q, cost, len(elementary_links_current_pair))
             total_cost += cost
             tot_num_el += len(elementary_links_current_pair)
-            #print("Optimal path for pair {}: {}, using {} repeaters and cost {}".format(q, path,
-            #                                                                             len(elementary_links_current_pair) - 1, cost))
+            # print("Optimal path for pair {}: {}, using {} repeaters and cost {}".format(q, path,
+            #       len(elementary_links_current_pair) - 1, cost))
 
 
         #print("Total number of elementary links:", tot_num_el)
@@ -405,7 +405,188 @@ class MinRepEdgeBasedProgram(Program):
                             # Set the objective coefficient to alpha * c'_ij
                             self.prob.objective.set_linear(ind, self.alpha * path_cost)
 
-
+    def draw_fixed_solution(self):
+        """Draw solution of the Colt data set for L_max = 900, R_max = 6 and beta = 1 / 75000."""
+        # Fixed solution values
+        repeater_nodes = ['Munich', 'Dusseldorf', 'Bordeaux', 'Rouen', 'Madrid']
+        chosen_paths = [(('TheHague', 'Lisbon'), ['TheHague', 'Antwerp', 'Brussels', 'Ghent', 'Lille', 'Paris', 'Rouen'], 568.1262055866217),
+                        (('TheHague', 'Lisbon'), ['Bordeaux', 'Madrid'], 553.9975778357486),
+                        (('TheHague', 'Lisbon'), ['Rouen', 'Rennes', 'Nantes', 'Bordeaux'], 626.4617287383495),
+                        (('TheHague', 'Lisbon'), ['Madrid', 'Lisbon'], 502.312485724141),
+                        (('TheHague', 'Copenhagen'), ['TheHague', 'Hoofddorp', 'Amsterdam', 'Dusseldorf', 'Essen', 'Hamburg', 'Copenhagen'], 862.110598442322),
+                        (('TheHague', 'Innsbruck'), ['TheHague', 'Hoofddorp', 'Amsterdam', 'Dusseldorf', 'Cologne', 'Frankfurt', 'Mannheim', 'Karlsruhe', 'Stuttgart', 'Munich'], 800.9213497397336),
+                        (('TheHague', 'Innsbruck'), ['Munich', 'Vienna', 'Linz', 'Salzburg', 'Innsbruck'], 756.1610898157807),
+                        (('TheHague', 'Basel'), ['TheHague', 'Hoofddorp', 'Amsterdam', 'Dusseldorf', 'Cologne', 'Frankfurt', 'Mannheim', 'Karlsruhe', 'Strasbourg', 'Basel'], 726.8449670699096),
+                        (('TheHague', 'Stuttgart'), ['TheHague', 'Hoofddorp', 'Amsterdam', 'Dusseldorf', 'Cologne', 'Frankfurt', 'Mannheim', 'Karlsruhe', 'Stuttgart'], 610.0887229223069),
+                        (('TheHague', 'Geneva'), ['TheHague', 'Antwerp', 'Brussels', 'Ghent', 'Lille', 'Paris', 'Rouen'], 568.1262055866217),
+                        (('TheHague', 'Geneva'), ['Rouen', 'Paris', 'Lyon', 'Geneva'], 617.3118302774578),
+                        (('TheHague', 'Barcelona'), ['TheHague', 'Antwerp', 'Brussels', 'Ghent', 'Lille', 'Paris', 'Rouen'], 568.1262055866217),
+                        (('TheHague', 'Barcelona'), ['Bordeaux', 'Madrid'], 553.9975778357486), (('TheHague', 'Barcelona'), ['Rouen', 'Rennes', 'Nantes', 'Bordeaux'], 626.4617287383495),
+                        (('TheHague', 'Barcelona'), ['Madrid', 'Valencia', 'Barcelona'], 605.033093501733),
+                        (('TheHague', 'Paris'), ['TheHague', 'Antwerp', 'Brussels', 'Ghent', 'Lille', 'Paris'], 456.0624993638363),
+                        (('Lisbon', 'Copenhagen'), ['Lisbon', 'Madrid'], 502.312485724141),
+                        (('Lisbon', 'Copenhagen'), ['Dusseldorf', 'Essen', 'Hamburg', 'Copenhagen'], 627.41016231492),
+                        (('Lisbon', 'Copenhagen'), ['Rouen', 'Paris', 'Lille', 'Ghent', 'Brussels', 'Antwerp', 'TheHague', 'Hoofddorp', 'Amsterdam', 'Dusseldorf'], 802.8266417140237),
+                        (('Lisbon', 'Copenhagen'), ['Bordeaux', 'Nantes', 'Rennes', 'Rouen'], 626.4617287383495),
+                        (('Lisbon', 'Copenhagen'), ['Madrid', 'Bordeaux'], 553.9975778357486),
+                        (('Lisbon', 'Innsbruck'), ['Lisbon', 'Madrid'], 502.312485724141),
+                        (('Lisbon', 'Innsbruck'), ['Munich', 'Vienna', 'Linz', 'Salzburg', 'Innsbruck'], 756.1610898157807),
+                        (('Lisbon', 'Innsbruck'), ['Rouen', 'Paris', 'Strasbourg', 'Karlsruhe', 'Stuttgart', 'Munich'], 829.1630535089),
+                        (('Lisbon', 'Innsbruck'), ['Bordeaux', 'Nantes', 'Rennes', 'Rouen'], 626.4617287383495),
+                        (('Lisbon', 'Innsbruck'), ['Madrid', 'Bordeaux'], 553.9975778357486),
+                        (('Lisbon', 'Basel'), ['Lisbon', 'Madrid'], 502.312485724141),
+                        (('Lisbon', 'Basel'), ['Bordeaux', 'Nantes', 'Rennes', 'Rouen'], 626.4617287383495),
+                        (('Lisbon', 'Basel'), ['Madrid', 'Bordeaux'],553.9975778357486),
+                        (('Lisbon', 'Basel'), ['Rouen', 'Paris', 'Strasbourg', 'Basel'], 622.9541518426047),
+                        (('Lisbon', 'Stuttgart'), ['Lisbon', 'Madrid'], 502.312485724141),
+                        (('Lisbon', 'Stuttgart'), ['Bordeaux', 'Nantes', 'Rennes', 'Rouen'], 626.4617287383495),
+                        (('Lisbon', 'Stuttgart'), ['Madrid', 'Bordeaux'], 553.9975778357486),
+                        (('Lisbon', 'Stuttgart'), ['Rouen', 'Paris', 'Strasbourg', 'Karlsruhe', 'Stuttgart'], 638.3304266914732),
+                        (('Lisbon', 'Geneva'), ['Lisbon', 'Madrid'], 502.312485724141),
+                        (('Lisbon', 'Geneva'), ['Bordeaux', 'Nantes', 'Rennes', 'Rouen'], 626.4617287383495),
+                        (('Lisbon', 'Geneva'), ['Madrid', 'Bordeaux'], 553.9975778357486),
+                        (('Lisbon', 'Geneva'), ['Rouen', 'Paris', 'Lyon', 'Geneva'], 617.3118302774578),
+                        (('Lisbon', 'Barcelona'), ['Lisbon', 'Madrid'], 502.312485724141),
+                        (('Lisbon', 'Barcelona'), ['Madrid', 'Valencia', 'Barcelona'], 605.033093501733),
+                        (('Lisbon', 'Paris'), ['Lisbon', 'Madrid'], 502.312485724141),
+                        (('Lisbon', 'Paris'), ['Bordeaux', 'Nantes', 'Rennes', 'Rouen', 'Paris'], 738.5254349611349),
+                        (('Lisbon', 'Paris'), ['Madrid', 'Bordeaux'], 553.9975778357486),
+                        (('Copenhagen', 'Innsbruck'), ['Copenhagen', 'Hamburg', 'Essen', 'Dusseldorf'], 627.41016231492),
+                        (('Copenhagen', 'Innsbruck'), ['Munich', 'Vienna', 'Linz', 'Salzburg', 'Innsbruck'], 756.1610898157807),
+                        (('Copenhagen', 'Innsbruck'), ['Dusseldorf', 'Cologne', 'Frankfurt', 'Mannheim', 'Karlsruhe', 'Stuttgart', 'Munich'], 566.2209136123315),
+                        (('Copenhagen', 'Basel'), ['Copenhagen', 'Hamburg', 'Essen', 'Dusseldorf'], 627.41016231492),
+                        (('Copenhagen', 'Basel'), ['Dusseldorf', 'Cologne', 'Frankfurt', 'Mannheim', 'Karlsruhe', 'Strasbourg', 'Basel'], 492.1445309425075),
+                        (('Copenhagen', 'Stuttgart'), ['Copenhagen', 'Hamburg', 'Essen', 'Dusseldorf'], 627.41016231492),
+                        (('Copenhagen', 'Stuttgart'), ['Dusseldorf', 'Cologne', 'Frankfurt', 'Mannheim','Karlsruhe', 'Stuttgart'], 375.38828679490484),
+                        (('Copenhagen', 'Geneva'), ['Copenhagen', 'Hamburg', 'Essen', 'Dusseldorf'], 627.41016231492),
+                        (('Copenhagen', 'Geneva'), ['Dusseldorf', 'Amsterdam', 'Hoofddorp', 'TheHague', 'Antwerp', 'Brussels', 'Ghent', 'Lille', 'Paris', 'Rouen'], 802.8266417140237),
+                        (('Copenhagen', 'Geneva'), ['Rouen', 'Paris', 'Lyon', 'Geneva'], 617.3118302774578),
+                        (('Copenhagen', 'Barcelona'), ['Copenhagen', 'Hamburg', 'Essen', 'Dusseldorf'], 627.41016231492),
+                        (('Copenhagen', 'Barcelona'), ['Dusseldorf', 'Amsterdam', 'Hoofddorp', 'TheHague', 'Antwerp', 'Brussels', 'Ghent', 'Lille', 'Paris', 'Rouen'], 802.8266417140237),
+                        (('Copenhagen', 'Barcelona'), ['Bordeaux', 'Madrid'], 553.9975778357486),
+                        (('Copenhagen', 'Barcelona'), ['Rouen', 'Rennes', 'Nantes', 'Bordeaux'], 626.4617287383495),
+                        (('Copenhagen', 'Barcelona'), ['Madrid', 'Valencia', 'Barcelona'], 605.033093501733),
+                        (('Copenhagen', 'Paris'), ['Copenhagen', 'Hamburg', 'Essen', 'Dusseldorf'], 627.41016231492),
+                        (('Copenhagen', 'Paris'), ['Dusseldorf', 'Amsterdam', 'Hoofddorp', 'TheHague', 'Antwerp', 'Brussels', 'Ghent', 'Lille', 'Paris'], 690.7629354912383),
+                        (('Innsbruck', 'Basel'), ['Innsbruck', 'Salzburg', 'Linz', 'Vienna', 'Munich'], 756.1610898157807),
+                        (('Innsbruck', 'Basel'), ['Munich', 'Stuttgart', 'Karlsruhe', 'Strasbourg', 'Basel'], 433.399602015763),
+                        (('Innsbruck', 'Stuttgart'), ['Innsbruck', 'Salzburg', 'Linz', 'Vienna', 'Munich'], 756.1610898157807),
+                        (('Innsbruck', 'Stuttgart'), ['Munich', 'Stuttgart'], 190.83262681742673),
+                        (('Innsbruck', 'Geneva'), ['Innsbruck', 'Salzburg', 'Linz', 'Vienna', 'Munich'], 756.1610898157807),
+                        (('Innsbruck', 'Geneva'), ['Munich', 'Stuttgart', 'Karlsruhe', 'Strasbourg', 'Paris', 'Rouen'], 829.1630535089),
+                        (('Innsbruck', 'Geneva'), ['Rouen', 'Paris', 'Lyon', 'Geneva'], 617.3118302774578),
+                        (('Innsbruck', 'Barcelona'), ['Innsbruck', 'Salzburg', 'Linz', 'Vienna', 'Munich'], 756.1610898157807),
+                        (('Innsbruck', 'Barcelona'), ['Munich', 'Stuttgart', 'Karlsruhe', 'Strasbourg', 'Paris', 'Rouen'], 829.1630535089),
+                        (('Innsbruck', 'Barcelona'), ['Bordeaux', 'Madrid'], 553.9975778357486),
+                        (('Innsbruck', 'Barcelona'), ['Rouen', 'Rennes', 'Nantes', 'Bordeaux'], 626.4617287383495),
+                        (('Innsbruck', 'Barcelona'), ['Madrid', 'Valencia','Barcelona'], 605.033093501733),
+                        (('Innsbruck', 'Paris'), ['Innsbruck', 'Salzburg', 'Linz', 'Vienna', 'Munich'], 756.1610898157807),
+                        (('Innsbruck', 'Paris'), ['Munich', 'Stuttgart', 'Karlsruhe', 'Strasbourg', 'Paris'], 717.0993472861146),
+                        (('Basel', 'Stuttgart'), ['Basel', 'Strasbourg', 'Karlsruhe', 'Stuttgart'], 242.56697519833625),
+                        (('Basel', 'Geneva'), ['Basel', 'Strasbourg', 'Paris', 'Rouen'], 622.9541518426048),
+                        (('Basel', 'Geneva'), ['Rouen', 'Paris', 'Lyon', 'Geneva'], 617.3118302774578),
+                        (('Basel', 'Barcelona'), ['Basel', 'Strasbourg', 'Paris', 'Rouen'], 622.9541518426048),
+                        (('Basel', 'Barcelona'), ['Bordeaux', 'Madrid'], 553.9975778357486),
+                        (('Basel', 'Barcelona'), ['Rouen', 'Rennes', 'Nantes', 'Bordeaux'], 626.4617287383495),
+                        (('Basel', 'Barcelona'), ['Madrid', 'Valencia', 'Barcelona'], 605.033093501733),
+                        (('Basel', 'Paris'), ['Basel', 'Strasbourg', 'Paris'], 510.89044561981933),
+                        (('Stuttgart', 'Geneva'), ['Stuttgart', 'Karlsruhe', 'Strasbourg', 'Paris', 'Rouen'], 638.3304266914732),
+                        (('Stuttgart', 'Geneva'), ['Rouen', 'Paris', 'Lyon', 'Geneva'], 617.3118302774578),
+                        (('Stuttgart', 'Barcelona'), ['Stuttgart', 'Karlsruhe', 'Strasbourg', 'Paris', 'Rouen'], 638.3304266914732),
+                        (('Stuttgart', 'Barcelona'), ['Bordeaux', 'Madrid'], 553.9975778357486),
+                        (('Stuttgart', 'Barcelona'), ['Rouen', 'Rennes', 'Nantes', 'Bordeaux'], 626.4617287383495),
+                        (('Stuttgart', 'Barcelona'), ['Madrid', 'Valencia', 'Barcelona'], 605.033093501733),
+                        (('Stuttgart', 'Paris'), ['Stuttgart', 'Karlsruhe', 'Strasbourg', 'Paris'], 526.2667204686878),
+                        (('Geneva', 'Barcelona'), ['Geneva', 'Lyon', 'Paris', 'Rouen'], 617.311830277458),
+                        (('Geneva', 'Barcelona'), ['Bordeaux', 'Madrid'], 553.9975778357486),
+                        (('Geneva', 'Barcelona'), ['Rouen', 'Rennes', 'Nantes', 'Bordeaux'], 626.4617287383495),
+                        (('Geneva', 'Barcelona'), ['Madrid', 'Valencia', 'Barcelona'], 605.033093501733),
+                        (('Geneva', 'Paris'), ['Geneva', 'Lyon', 'Paris'], 505.2481240546725),
+                        (('Barcelona', 'Paris'), ['Barcelona', 'Valencia', 'Madrid'], 605.033093501733),
+                        (('Barcelona', 'Paris'), ['Bordeaux', 'Nantes', 'Rennes', 'Rouen', 'Paris'], 738.5254349611349),
+                        (('Barcelona', 'Paris'), ['Madrid', 'Bordeaux'], 553.9975778357486)]
+        pos = {}
+        labels = {}
+        color_map = []
+        visited_cities = []
+        rep_nodes_drawing = []
+        le_nodes_drawing = []
+        edge_list = []
+        #print(self.graph_container.city_list)
+        #print(self.graph_container.unique_city_pairs)
+        for tup in chosen_paths:
+            elementary_link_path = tup[1]
+            visited_cities.extend(elementary_link_path)
+            #print("EL_path", elementary_link_path)
+            for i in range(len(elementary_link_path) - 1):
+                edge_list.append((elementary_link_path[i], elementary_link_path[i+1]))
+            #print("Edge_list", edge_list)
+        edge_list = list(set(edge_list))
+        visited_cities = list(set(visited_cities))
+        for node, nodedata in self.graph_container.graph.nodes.items():
+            if 'Longitude' in nodedata:
+                pos[node] = [nodedata['Longitude'], nodedata['Latitude']]
+            else:
+                pos[node] = [nodedata['xcoord'], nodedata['ycoord']]
+            if node in self.graph_container.city_list:
+                if node == "Geneve":
+                    labels[node] = "Geneva"
+                elif node == "TheHague":
+                    labels[node] = "The Hague"
+                else:
+                    labels[node] = node
+                color_map.append('green')
+            elif node in repeater_nodes:
+                labels[node] = node
+                rep_nodes_drawing.append(node)
+                color_map.append('pink')
+            elif node in visited_cities:
+                #labels[node] = node
+                le_nodes_drawing.append(node)
+                color_map.append([30 / 255, 144 / 255, 255 / 255])
+            else:
+                labels[node] = ""
+                color_map.append('none')
+        fig, ax = plt.subplots(figsize=(10, 6))
+        # First draw end nodes
+        #print(repeater_nodes)
+        pos["Innsbruck"][1] = pos["Innsbruck"][1] - 1.4
+        end_nodes = nx.draw_networkx_nodes(G=self.graph_container.graph, pos=pos, nodelist=self.graph_container.city_list,
+                                           node_shape='s', node_color=[[0.66, 0.93, 0.73]], label="End Node")
+        end_nodes.set_edgecolor('k')
+        if repeater_nodes:
+            rep_nodes = nx.draw_networkx_nodes(G=self.graph_container.graph, pos=pos, nodelist=rep_nodes_drawing,
+                                               node_color=[[30 / 255, 144 / 255, 255 / 255]], label="Repeater Node")
+            rep_nodes.set_edgecolor('k')
+        le_nodes = nx.draw_networkx_nodes(G=self.graph_container.graph, pos=pos, nodelist=le_nodes_drawing,
+                                          node_color=[[0.83, 0.83, 0.83]], label="Link Extension", alpha=0.2)
+        le_nodes.set_edgecolor('k')
+        nx.draw_networkx_edges(G=self.graph_container.graph, pos=pos, edgelist=edge_list)
+        # Modify pos for labels
+        pos["Copenhagen"][0] = 8.7
+        pos["TheHague"][1] = pos["TheHague"][1] + 1.1
+        pos["Dusseldorf"][0] = 10.2
+        pos["Rouen"] = [pos["Rouen"][0] - 2.1, pos["Rouen"][1] + 0.1]
+        pos["Paris"] = [4.2, 49.5]
+        pos["Stuttgart"] = [11.5, 49.6]
+        pos["Madrid"][1] = 39.2
+        pos["Lisbon"][1] = 39.6
+        pos["Barcelona"][1] = 42.3
+        pos["Bordeaux"][0] = - 3.5
+        pos["Geneva"] = [7.1, 45.2]
+        pos["Basel"][0] = 5.7
+        pos["Innsbruck"] = [pos["Innsbruck"][0] + 3.2, pos["Innsbruck"][1] - 0.1]
+        pos["Munich"] = [10.3, 47.2]
+        nx.draw_networkx_labels(G=self.graph_container.graph, pos=pos, labels=labels, font_size=20, font_weight="bold")
+        #nx.draw(self.graph_container.graph, labels=labels, with_labels=True, font_weight='bold',
+        #        pos=pos, node_color=color_map, node_size=200)
+        plt.axis('off')
+        #margin = 0.33
+        #fig.subplots_adjust(margin, margin, 1. - margin, 1. - margin)
+        ax.axis('equal')
+        plt.tight_layout()
+        plt.legend(loc='upper left', fontsize=20)
+        plt.show()
 
 
 

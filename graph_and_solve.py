@@ -110,19 +110,21 @@ if __name__ == "__main__":
     R_max = 1
     L_max = 1
     prog = MinRepEdgeBasedProgram(graph=G, num_allowed_repeaters=R_max, L_max=L_max, alpha=0, read_from_file=True)
-    prog.update_parameters(L_max_new=1000, R_max_new=6, alpha_new=1/75000)
-    print(prog.solve(draw_solution=True))
+    prog.draw_fixed_solution()
+    #prog.update_parameters(L_max_new=1000, R_max_new=6, alpha_new=1/75000)
+    #print(prog.solve(draw_solution=True))
     # dict_list = []
-    # for alpha in [0, 1 / 75000]:
-    #     for L_max in range(550, 1275, 25):
-    #         R_max = 6
-    #         prog.update_parameters(L_max_new=L_max, R_max_new=R_max, alpha_new=alpha)
-    #         output = prog.solve()
-    #         print(output)
-    #         dict_list.append(output)
-    # final_dict = {k: [d[k] for d in dict_list] for k in dict_list[0]}
-    # now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
-    # pd.DataFrame(final_dict).to_csv('./data/repAllocData_{}_{}.csv'.format(filename[0:-4], now), index=False)
+    # for alpha in [1 / 75000]:
+    #     for L_max in [900]:
+    #         for R_max in [6]:
+    #             prog.update_parameters(L_max_new=L_max, R_max_new=R_max, alpha_new=alpha)
+    #             prog.draw_fixed_solution()
+    #             output = prog.solve()
+    #             print(output)
+    #             dict_list.append(output)
+    #final_dict = {k: [d[k] for d in dict_list] for k in dict_list[0]}
+    #now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
+    #pd.DataFrame(final_dict).to_csv('./data/repAllocData_{}_{}.csv'.format(filename[0:-4], now), index=False)
     # print(prog.solve())
     # prog.update_parameters(L_max_new=100, R_max_new=10, alpha_new=1/2500)
     # print(prog.solve())

@@ -135,6 +135,8 @@ class Program:
         rep_nodes_drawing = []
         le_nodes_drawing = []
         edge_list = []
+        print(repeater_nodes)
+        print(chosen_paths)
         #print(self.graph_container.city_list)
         #print(self.graph_container.unique_city_pairs)
         for tup in chosen_paths:
