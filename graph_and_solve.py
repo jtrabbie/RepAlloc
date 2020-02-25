@@ -1,118 +1,180 @@
-import networkx as nx
-import matplotlib.pyplot as plt
+from programs import LinkBasedProgram, PathBasedProgram
+from graph_tools import GraphContainer, create_graph_and_partition
+from solution import Solution
+
 import numpy as np
-import pandas as pd
 from datetime import datetime
 
-from programs import EdgeBasedProgram, PathBasedProgram
-from program_alt_obj import MinMaxEdgeBasedProgram, MinRepEdgeBasedProgram
-
-
-def read_graph(file, draw=False):
-    G = nx.read_gml(file)
-    file_name = file[0:-4]
-    if file_name == 'Surfnet':
-        # We are dealing with the Netherlands dataset
-        city_list = ["Vlissingen", "Groningen", "DenHaag", "Maastricht"]
-    elif file_name == 'Colt':
-        # This is the European dataset
-        # QIA Members: IQOQI, UOI (Innsbruck), CNRS (Paris), ICFO (Barcelona), IT (Lisbon),
-        #              MPQ (Garching [DE] -> Munich), NBI (Copenhagen), QuTech (Delft -> The Hague), UOB (Basel),
-        #              UOG (Geneva)
-        # NOTE: Graching replaced by Munic, Delft by The Hague
-        city_list = ['Innsbruck', 'Paris', 'Barcelona', 'Lisbon', 'Copenhagen', 'TheHague', 'Basel', 'Geneva',
-                     'Stuttgart']
-    else:
-        raise NotImplementedError("Dataset {} not implemented (no city list defined)".format(file_name))
-    pos = {}
-    color_map = []
-
-    for node, nodedata in G.nodes.items():
-        pos[node] = [nodedata['Longitude'], nodedata['Latitude']]
-        if node in city_list:
-            color_map.append('green')
-            nodedata['type'] = 'City'
-        else:
-            color_map.append([30/255, 144/255, 255/255])
-            nodedata['type'] = 'Node'
-
-    if draw:
-        plt.figure(1)
-        nx.draw(G, with_labels=True, font_weight='bold', pos=pos, node_color=color_map, node_size=200)
-        plt.show()
-
-    return G
-
-
-def create_graph(draw=False, node_pos=None):
-    if node_pos is None:
-        raise NotImplementedError("Random graph must contain x and y coordinates")
-    city_list = []
-    num_nodes = 0
-    for key in node_pos:
-        if type(key) is str:
-            city_list.append(key)
-        else:
-            num_nodes += 1
-    if len(city_list) == 0:
-        raise ValueError("Must have at least one city")
-    # Create a random graph
-    graph = nx.fast_gnp_random_graph(n=num_nodes, p=0.8, seed=np.random)
-    for node in graph.nodes():
-        graph.nodes[node]['xcoord'] = node_pos[node][0]
-        graph.nodes[node]['ycoord'] = node_pos[node][1]
-        graph.nodes[node]['type'] = 'Node'
-    for city in city_list:
-        # Add the four city nodes and randomly connect them to 3 other nodes
-        graph.add_node(city)
-        graph.nodes[city]['xcoord'] = node_pos[city][0]
-        graph.nodes[city]['ycoord'] = node_pos[city][1]
-        graph.nodes[city]['type'] = 'City'
-        connected_edges = np.random.choice(range(num_nodes), 3, replace=False)
-        for edge in connected_edges:
-            graph.add_edge(city, edge)
-    color_map = ['blue'] * len(graph.nodes)
-    # Save seed for drawing
-    global numpy_seed
-    numpy_seed = np.random.get_state()
-    for idx, node in enumerate(graph.nodes):
-        if type(node) == str:
-            color_map[idx] = 'olive'
-    if draw:
-        plt.figure(1)
-        nx.draw(graph, with_labels=True, font_weight='bold',
-                node_color=color_map, pos=node_pos)
-        plt.show()
-    # Convert node labels to strings
-    label_remapping = {key: str(key) for key in range(num_nodes)}
-    graph = nx.relabel_nodes(graph, label_remapping)
-
-    return graph
-
-
 if __name__ == "__main__":
-    np.random.seed(188)
-    node_pos = {'Lei': [0, 0],
-                'Haa': [10, 10],
-                'Ams': [0, 10],
-                'Del': [10, 0],
-                0: [1, 1],
-                1: [3, 2],
-                2: [8, 7],
-                3: [2, 4],
-                4: [3, 7],
-                5: [4, 5],
-                6: [8, 1],
-                7: [7, 4]}
+    for _ in range(500):
+        D = np.random.randint(1, 10)
+        k = np.random.randint(1, 5)
+        L_max = round(np.random.rand() + 0.5, 5)
+        R_max = np.random.randint(1, 4)
+        n = np.random.randint(10, 20)
+        seed = np.random.randint(1, 1e5)
+        alpha = 1 / 250
+        print(D, k, L_max, R_max, n, seed)
+        G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=False, seed=seed)
+        prog_LBF = LinkBasedProgram(graph_container=GraphContainer(G), L_max=L_max, R_max=R_max, D=D, k=k, alpha=alpha)
+        sol_LBF, _ = prog_LBF.solve()
+        data_LBF = sol_LBF.process()
+        # print(data_LBF)
+        #sol_LBF.draw()
+        prog_PBF = PathBasedProgram(graph_container=GraphContainer(G), L_max=L_max, R_max=R_max, D=D, k=k, alpha=alpha)
+        sol_PBF, _ = prog_PBF.solve()
+        data_PBF = sol_PBF.process()
+        # print(data_PBF)
+        # sol_PBF.draw()
+        # prog_PBF = PathBasedProgram(graph_container=GraphContainer(G), L_max=L_max, R_max=R_max, D=D, k=k, alpha=alpha)
+        # sol_PBF, _ = prog_PBF.solve()
+        # data_PBF = sol_PBF.process()
+        # print(data_PBF)
+        if data_LBF != data_PBF:
+            print("LBF and PBF give different solutions!")
+            print("LBF:", data_LBF)
+            print("PBF:", data_PBF)
+            print("D = {}, k = {}, L_max = {}, R_max = {}, n = {}, seed = {}, alpha = {}"
+                  .format(D, k, L_max, R_max, n, seed, alpha))
+            break
+        else:
+            print("Same solutions.")
+        # prog = LinkBasedProgram(graph_container=GraphContainer(G), L_max=L_max, R_max=R_max, D=D, k=k, alpha=1/1000)
+        # sol, _ = prog.solve()
+        # data2 = sol.process()
+        # print(data2)
+        # if data1 != data2:
+        #     print("LBF and PBF give different solutions!")
+        #     print("PBF: ", data1)
+        #     print("LBF: ", data2)
+        #     print(D, L_max, R_max, n, seed)
+        # else:
+        #     print("Same solutions.")
+
+    # with open('res_2020-02-25_11-51-30.txt', 'r') as f:
+    #     res = eval(f.read())
+    # max_k = 6
+    # k_vals = list(range(1, max_k + 1))
+    # n = 20
+    # alpha = 1 / 250
+    # num_suc_max = 10
+    # res = {}
+    # save_data = True
+    # for k in k_vals:
+    #     con = []
+    #     num_reps = []
+    #     num_suc = 0
+    #     while num_suc < num_suc_max:
+    #         G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=False)
+    #         prog = RevisedLinkBasedProgram(graph_container=GraphContainer(G), D=k, k=1, alpha=alpha)
+    #         sol, _ = prog.solve()
+    #         data = sol.process()
+    #         avg_connectivity = sol.compute_average_connectivy()
+    #         if avg_connectivity == 0:
+    #             # Solution is infeasible, do not take this into account
+    #             continue
+    #         else:
+    #             num_reps.append(data['Num_reps'])
+    #             con.append(avg_connectivity)
+    #             num_suc += 1
+    #     res[k] = (con, num_reps)
+    # # sol.plot_degree_histogram()
+    # if save_data:
+    #     now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
+    #     with open('res_{}.txt'.format(now), 'w') as f:
+    #         print(res, file=f)
+    # Solution.plot_connectivity_and_num_reps(res=res, xdata=k_vals, xlabel='D')
+
+
+    # with open('res_2020-02-17_14-27-59.txt', 'r') as f:
+    #     res = eval(f.read())
+    # max_k = 6
+    # k_vals = list(range(1, max_k + 1))
+    # num_suc_max = 10
+    # res = {}
+    # save_data = True
+    # comp_times_dict = {}
+    # num_node_vals = list(range(10, 50))
+    # for num_nodes in num_node_vals:
+    #     num_suc = 0
+    #     comp_times = []
+    #     while num_suc < num_suc_max:
+    #         G = create_graph_and_partition(num_nodes=num_nodes, radius=0.7)
+    #         if G is None:
+    #             # Graph contains isolates
+    #             continue
+    #         prog = LinkBasedProgram(graph=G, L_max=L_max, k=2, alpha=1/1000)
+    #         if prog.graph_container.num_repeater_nodes == 0:
+    #             # Every node is selected as end node by the convex hull
+    #             continue
+    #         sol, comp_time = prog.solve()
+    #         sol.process()
+    #         if 'infeasible' in sol.program.prob.solution.get_status_string():
+    #             # Solution is infeasible, do not take this into account
+    #             continue
+    #         else:
+    #             comp_times.append(comp_time)
+    #             num_suc += 1
+    #     comp_times_dict[num_nodes] = comp_times
+    # if save_data:
+    #     now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
+    #     with open('comp_times_{}.txt'.format(now), 'w') as f:
+    #         print(comp_times_dict, file=f)
+    # y_comp_time = []
+    # std_y_comp_time = []
+    # num_graphs = num_suc_max
+    # for val in comp_times_dict.values():
+    #     y_comp_time.append(np.mean(val))
+    #     std_y_comp_time.append(np.std(val))
+    # # Convert to standard deviation of the mean
+    # std_y_comp_time /= np.sqrt(num_graphs)
+    # ax = plt.gca()
+    # overall_fs = 18
+    # plt.xticks(fontsize=overall_fs)
+    # plt.yticks(fontsize=overall_fs)
+    # print(y_comp_time)
+    # h1 = ax.errorbar(num_node_vals, y_comp_time, marker='.', markersize=15, yerr=std_y_comp_time,
+    #                  linestyle='None', linewidth=3, color='g')
+    # # fit = np.poly1d(np.polyfit(xdata, y_con, deg=1))
+    # # xfit = np.linspace(1, max(xdata), 10)
+    # # h2, = ax.plot(xfit, fit(xfit), '--', linewidth=3)
+    # ax.set_xlabel('n', fontsize=overall_fs)
+    # ax.set_ylabel('Computation time (s)', fontsize=overall_fs)
+    # # plt.legend((h1, h2, h3), ('Average Connectivity', 'Linear Fit', 'Number of Repeaters'), fontsize=overall_fs,
+    # #           loc='center right')
+    # plt.show()
+
+    # for k in k_vals:
+    #     con = []
+    #     num_reps = []
+    #     num_suc = 0
+    #     while num_suc < num_suc_max:
+    #         G = create_graph_and_partition(num_nodes=15, radius=0.7, draw=False)
+    #         prog = LinkBasedProgram(graph=G, L_max=L_max, k=k, alpha=1/1000)
+    #         sol, _ = prog.solve()
+    #         data = sol.process()
+    #         avg_connectivity = sol.compute_average_connectivy()
+    #         if avg_connectivity == 0:
+    #             # Solution is infeasible, do not take this into account
+    #             continue
+    #         else:
+    #             num_reps.append(data['Num_reps'])
+    #             con.append(avg_connectivity)
+    #             num_suc += 1
+    #     res[k] = (con, num_reps)
+    # sol.plot_degree_histogram()
+    # sol.plot_connectivity_and_num_reps(res=res, xdata=k_vals, xlabel='k', )
+
     # G = create_graph(node_pos=node_pos, draw=False)
-    filename = "Colt.gml"
-    G = read_graph(filename, draw=False)
-    R_max = 1
-    L_max = 1
-    prog = MinRepEdgeBasedProgram(graph=G, num_allowed_repeaters=R_max, L_max=L_max, alpha=0, read_from_file=True)
-    prog.draw_fixed_solution()
-    #prog.update_parameters(L_max_new=1000, R_max_new=6, alpha_new=1/75000)
-    #print(prog.solve(draw_solution=True))
+    # filename = "Surfnet.gml"
+    # G = read_graph(filename, draw=False)
+    # R_max = 11
+    # L_max = 10
+    # prog = LinkBasedProgram(graph=G, num_allowed_repeaters=R_max, L_max=L_max, alpha=1, read_from_file=False)
+    # prog = MinRepEdgeBasedProgram(graph=G, num_allowed_repeaters=R_max, L_max=L_max, alpha=0, read_from_file=True)
+    # prog.draw_fixed_solution()
+    # prog.update_parameters(L_max_new=1000, R_max_new=6, alpha_new=1/75000)
+    # print(prog.solve(draw_solution=True))
     # dict_list = []
     # for alpha in [1 / 75000]:
     #     for L_max in [900]:
