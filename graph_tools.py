@@ -98,8 +98,9 @@ def read_graph(file, draw=False):
         #              MPQ (Garching [DE] -> Munich), NBI (Copenhagen), QuTech (Delft -> The Hague), UOB (Basel),
         #              UOG (Geneva)
         # NOTE: Graching replaced by Munic, Delft by The Hague
-        end_node_list = ['Innsbruck', 'Paris', 'Barcelona', 'Lisbon', 'Copenhagen', 'TheHague', 'Basel', 'Geneva',
-                     'Stuttgart']
+        # end_node_list = ['Innsbruck', 'Paris', 'Barcelona', 'Lisbon', 'Copenhagen', 'TheHague', 'Basel', 'Geneva',
+        #             'Stuttgart']
+        end_node_list = ['Innsbruck', 'Paris', 'Copenhagen', 'TheHague', 'Rome', 'Barcelona']
     else:
         raise NotImplementedError("Dataset {} not implemented (no city list defined)".format(file_name))
     pos = {}
@@ -114,10 +115,10 @@ def read_graph(file, draw=False):
             color_map.append([30 / 255, 144 / 255, 255 / 255])
             nodedata['type'] = 'repeater_node'
 
+    nx.set_node_attributes(G, pos, name='pos')
+
     if draw:
-        plt.figure(1)
-        nx.draw(G, with_labels=True, font_weight='bold', pos=pos, node_color=color_map, node_size=200)
-        plt.show()
+        draw_graph(G)
 
     return G
 
@@ -168,10 +169,7 @@ def create_graph(draw=False):
         if type(node) == str:
             color_map[idx] = 'olive'
     if draw:
-        plt.figure(1)
-        nx.draw(graph, with_labels=True, font_weight='bold',
-                node_color=color_map, pos=node_pos)
-        plt.show()
+        draw_graph(graph)
     # Convert node labels to strings
     label_remapping = {key: str(key) for key in range(num_nodes)}
     graph = nx.relabel_nodes(graph, label_remapping)
@@ -179,7 +177,7 @@ def create_graph(draw=False):
     return graph
 
 
-def create_random_graph(n_repeaters, n_consumers, radius, draw, seed=2):
+def create_graph_on_unit_cube(n_repeaters, radius, draw, seed=2):
     """Create a geometric graph where nodes randomly get assigned a position. Two nodes are connected if their distance
     does not exceed the given radius."""
     np.random.seed = seed
@@ -212,10 +210,7 @@ def create_random_graph(n_repeaters, n_consumers, radius, draw, seed=2):
     label_remapping = {key: str(key) for key in G.nodes() if type(key) is not str}
     G = nx.relabel_nodes(G, label_remapping)
     if draw:
-        plt.figure(1)
-        nx.draw(G=G, with_labels=True, font_weight="bold", pos=nx.get_node_attributes(G, 'pos'),
-                node_color=color_map)
-        plt.show()
+        draw_graph(G)
     return G
 
 
@@ -247,17 +242,34 @@ def create_graph_and_partition(num_nodes, radius, draw=False, seed=None):
         G.nodes[node]['ycoord'] = G.nodes[node]['pos'][1]
 
     if draw:
-        plt.figure(1)
-        end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s',
-                                           node_color=[[0.66, 0.93, 0.73]], label="End Node")
-        end_nodes.set_edgecolor('k')
-        rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes,
-                                           node_color=[[1, 1, 1]], label="Repeater Node")
-        rep_nodes.set_edgecolor('k')
-        nx.draw_networkx_labels(G=G, pos=pos, font_size=13, font_weight="bold")
-        nx.draw_networkx_edges(G=G, pos=pos, width=1)
-        plt.show()
+        draw_graph(G)
     # Convert node labels to strings
     label_remapping = {key: str(key) for key in G.nodes() if type(key) is not str}
     G = nx.relabel_nodes(G, label_remapping)
     return G
+
+
+def draw_graph(G):
+    pos = nx.get_node_attributes(G, 'pos')
+    repeater_nodes = []
+    end_nodes = []
+    for node in G.nodes():
+        if G.nodes[node]['type'] == 'repeater_node':
+            repeater_nodes.append(node)
+        else:
+            end_nodes.append(node)
+    fig, ax = plt.subplots(figsize=(10, 7))
+    end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=700,
+                                       node_color=[[1.0, 140 / 255, 0.]], label="End Node")
+    end_nodes.set_edgecolor('k')
+    rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=700,
+                                       node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node")
+    rep_nodes.set_edgecolor('k')
+    nx.draw_networkx_labels(G=G, pos=pos, font_size=15, font_weight="bold")
+    nx.draw_networkx_edges(G=G, pos=pos, width=1)
+    plt.axis('off')
+    margin = 0.33
+    fig.subplots_adjust(margin, margin, 1. - margin, 1. - margin)
+    ax.axis('equal')
+    fig.tight_layout()
+    plt.show()
