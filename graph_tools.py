@@ -3,6 +3,7 @@ from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 import networkx as nx
 import itertools
+import ast
 
 
 class GraphContainer:
@@ -91,7 +92,14 @@ def read_graph(file, draw=False):
     file_name = file[0:-4]
     if file_name == 'Surfnet':
         # We are dealing with the Netherlands dataset
-        end_node_list = ["Vlissingen", "Groningen", "DenHaag", "Maastricht"]
+        # end_node_list = ["Vlissingen", "Groningen", "DenHaag", "Maastricht"]
+        # end_node_list = ["Amsterdam", "Leiden", "Groningen", "Maastricht", "Nijmegen", "Utrecht", "Delft",
+        #                  "Rotterdam", "Tilburg"]
+        end_node_list = ["Middelburg", "Groningen", "Maastricht", "Enschede", "Delft", "Amsterdam", "Utrecht", "Den_Helder"]
+    elif file_name == "SurfnetFiberdata":
+        end_node_list = ["Asd001b", "Mt001a", "GN001A", "DT001A"]
+    elif file_name == "SurfnetCore":
+        end_node_list = ["Amsterdam 1", "Delft 1", "Groningen 1", "Maastricht"]
     elif file_name == 'Colt':
         # This is the European dataset
         # QIA Members: IQOQI, UOI (Innsbruck), CNRS (Paris), ICFO (Barcelona), IT (Lisbon),
@@ -107,7 +115,12 @@ def read_graph(file, draw=False):
     color_map = []
 
     for node, nodedata in G.nodes.items():
-        pos[node] = [nodedata['Longitude'], nodedata['Latitude']]
+        if "position" in nodedata:
+            pos[node] = ast.literal_eval(nodedata["position"])
+        elif "Longitude" in nodedata and "Latitude" in nodedata:
+            pos[node] = [nodedata['Longitude'], nodedata['Latitude']]
+        else:
+            raise ValueError("Cannot determine node position.")
         if node in end_node_list:
             color_map.append('green')
             nodedata['type'] = 'end_node'
@@ -259,14 +272,15 @@ def draw_graph(G):
         else:
             end_nodes.append(node)
     fig, ax = plt.subplots(figsize=(10, 7))
-    end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=700,
+    end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=500,
                                        node_color=[[1.0, 140 / 255, 0.]], label="End Node")
     end_nodes.set_edgecolor('k')
-    rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=700,
+    rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=500,
                                        node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node")
     rep_nodes.set_edgecolor('k')
-    nx.draw_networkx_labels(G=G, pos=pos, font_size=15, font_weight="bold")
-    nx.draw_networkx_edges(G=G, pos=pos, width=1)
+    label_pos = {city: [pos[city][0], pos[city][1] - 0.07] for city in pos}
+    nx.draw_networkx_labels(G=G, pos=label_pos, font_size=10, font_weight="normal")
+    nx.draw_networkx_edges(G=G, pos=pos, width=0.3)
     plt.axis('off')
     margin = 0.33
     fig.subplots_adjust(margin, margin, 1. - margin, 1. - margin)
