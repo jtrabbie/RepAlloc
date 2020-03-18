@@ -99,7 +99,7 @@ def read_graph(file, draw=False):
     elif file_name == "SurfnetFiberdata":
         end_node_list = ["Asd001b", "Mt001a", "GN001A", "DT001A"]
     elif file_name == "SurfnetCore":
-        end_node_list = ["Amsterdam 1", "Delft 1", "Groningen 1", "Maastricht"]
+        end_node_list = ["Amsterdam 1", "Delft 1", "Groningen 1", "Maastricht", "Enschede 2"]
     elif file_name == 'Colt':
         # This is the European dataset
         # QIA Members: IQOQI, UOI (Innsbruck), CNRS (Paris), ICFO (Barcelona), IT (Lisbon),
@@ -279,7 +279,7 @@ def draw_graph(G):
                                        node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node")
     rep_nodes.set_edgecolor('k')
     label_pos = {city: [pos[city][0], pos[city][1] - 0.07] for city in pos}
-    nx.draw_networkx_labels(G=G, pos=label_pos, font_size=10, font_weight="normal")
+    nx.draw_networkx_labels(G=G, pos=label_pos, font_size=11, font_weight="bold")
     nx.draw_networkx_edges(G=G, pos=pos, width=0.3)
     plt.axis('off')
     margin = 0.33

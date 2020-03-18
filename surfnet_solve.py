@@ -20,8 +20,8 @@ if __name__ == "__main__":
     # for node, nodedata in G.nodes.items():
     #     print(node)
     #     print(nodedata)
-    G = read_graph('SurfnetCore.gml', draw=True)
-    prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=200, R_max=6, D=1e20, k=2,
+    G = read_graph('SurfnetCore.gml', draw=False)
+    prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=151, R_max=6, D=4, k=2,
                                         alpha=1 / 75000)
     sol, comp_time = prog.solve()
     print("Computation Time:", comp_time)

@@ -60,15 +60,15 @@ graph [
     old_label "Gn012a"
     locid "Gn"
     label "Groningen 2"
-    position "[6.3561371, 52.8141711]"
+    position "[6.2561371, 52.8141711]"
     unsure "None"
   ]
   node [
     id 8
     old_label "Zwt001a"
     locid "Zwt"
-    label "Zwijndrecht"
-    position "[4.6405672, 51.7165708]"
+    label "Zwartsluis"
+    position "[6.6, 52.59]"
     unsure "?"
   ]
   node [
@@ -100,7 +100,7 @@ graph [
     old_label "Es001b"
     locid "Es"
     label "Enschede 1"
-    position "[6.4936, 52.21792]"
+    position "[6.4736, 52.21792]"
     unsure "None"
   ]
   node [
@@ -244,7 +244,7 @@ graph [
     old_label "Gv008a"
     locid "Gv"
     label "Den Haag 1"
-    position "[4.3101374, 52.1800504]"
+    position "[4.3301374, 52.1800504]"
     unsure "None"
   ]
   node [
@@ -268,7 +268,7 @@ graph [
     old_label "Rt004a"
     locid "Rt"
     label "Rotterdam 1"
-    position "[4.2628033, 51.8227339]"
+    position "[4.2128033, 51.8227339]"
     unsure "None"
   ]
   node [
@@ -356,7 +356,7 @@ graph [
     old_label "Ehv001b"
     locid "Ehv"
     label "Eindhoven 1"
-    position "[5.28784, 51.43406]"
+    position "[5.23784, 51.43406]"
     unsure "None"
   ]
   node [
