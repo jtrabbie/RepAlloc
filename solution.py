@@ -196,6 +196,13 @@ class Solution:
         return self.parameters
 
     def get_solution_data(self):
+        if "min_node_connectivity" not in self.overall_data.keys():
+            min_node_connectivity, avg_node_connectivity = self.compute_node_connectivy()
+            min_edge_connectivity, avg_edge_connectivity = self.compute_edge_connectivity()
+            self.overall_data.update({"min_node_connectivity": min_node_connectivity,
+                                      "avg_node_connectivity": avg_node_connectivity,
+                                      "min_edge_connectivity": min_edge_connectivity,
+                                      "avg_edge_connectivity": avg_edge_connectivity})
         return self.overall_data
 
     def get_path_data(self):
