@@ -303,25 +303,30 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
 
 if __name__ == "__main__":
 
-    # effect_of_Lmax = RandomGraphScan(scan_param_name="L_max",
-    #                                  scan_param_min=0.6,
-    #                                  scan_param_max=1.2,
-    #                                  scan_param_step=0.2,
-    #                                  num_graphs=5,
-    #                                  num_nodes=20,
-    #                                  radius=0.6,
-    #                                  alpha=1 / 250,
-    #                                  L_max=1,
-    #                                  R_max=6,
-    #                                  D=10,
-    #                                  k=2)
-    # effect_of_Lmax.solve()
-    # effect_of_Lmax.save("effect_of_Lmax.p")
-    effect_of_Lmax = pickle.load(open("effect_of_Lmax.p", "rb"))
-    # plot_num_repeaters(effect_of_Lmax)
-    # effect_of_Lmax.add_graphs(10)
-    effect_of_Lmax.solve()
-    effect_of_Lmax.save("effect_of_Lmax.p")
-    plot_random_graph_scan(random_graph_scan=effect_of_Lmax,
-                           quantity="min_node_connectivity",
-                           ylabel="Average Node Connectivity")
+     # results = RandomGraphScan(scan_param_name="L_max",
+     #           scan_param_min=0.5,
+     #           scan_param_max=1.2,
+     #           scan_param_step=.1,
+     #           num_graphs=50,
+     #           num_nodes=25,
+     #           radius=0.9,
+     #           alpha=1 / 250,
+     #           L_max=1,
+     #           R_max=6,
+     #           D=8,
+     #           k=2)
+     # results.solve()
+     # results.save("results.p")
+     filename = "effect_of_k.p"
+     results = pickle.load(open(filename, "rb"))
+     # print(results.num_graphs)
+     for _ in range(1):
+     # plot_num_repeaters(effect_of_Lmax)
+        results.add_graphs(50)
+        results.solve()
+        results.save(filename)
+        #plot_random_graph_scan(random_graph_scan=effect_of_Lmax,
+        #                       quantity="min_node_connectivity",
+        #                       ylabel="Average Node Connectivity")
+        print(results.computation_time)
+
