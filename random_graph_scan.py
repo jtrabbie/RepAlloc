@@ -107,11 +107,11 @@ class RandomGraphScan:
         print("adding {} graphs".format(num_extra_graphs))
         self.num_graphs += num_extra_graphs
         start_time = time.time()
-        new_graphs, new_solutions = generate_feasible_graphs(num_graphs=num_extra_graphs,
-                                                             num_nodes=self.num_nodes,
-                                                             radius=self.radius,
-                                                             alpha=self.alpha,
-                                                             **self.most_restrictive_parameters)
+        new_graphs, new_solutions, _ = generate_feasible_graphs(num_graphs=num_extra_graphs,
+                                                                num_nodes=self.num_nodes,
+                                                                radius=self.radius,
+                                                                alpha=self.alpha,
+                                                                **self.most_restrictive_parameters)
         self.graphs += new_graphs
         new_solutions_data = [solution.get_solution_data() for solution in new_solutions]
         if self.most_restrictive_parameters[self.scan_param_name] in self.solutions_data.keys():
@@ -209,6 +209,52 @@ def plot_random_graph_scan(random_graph_scan, quantity, ylabel):
     plt.show()
 
 
+def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius, alpha, L_max, R_max, D, k):
+    """Determine computation time as a function of the number of nodes in a random geometric graph.
+
+    Parameters
+    ----------
+    n_min : int
+        Smallest number of nodes in scan over number of nodes.
+    n_max : int
+        Largest number of nodes in scan over number of nodes.
+    n_step : int
+        Stepsize of scan over number of nodes.
+    num_graphs : int
+        Number of feasible graphs required.
+    radius : float
+        Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
+    alpha : float
+        Small number used to set secondary objective.
+    L_max : int
+        Maximum elementary-link length.
+    R_max : int
+        Maximum number of repeaters on path.
+    D : int
+        Quantum-repeater capacity.
+    k : int
+        Robustness parameter.
+
+    Notes
+    -----
+    Dictionary with number of nodes as keys and lists fo computation times (of length num_graphs) as values is
+    saved in the current folder.
+
+    """
+
+    comp_times = {}
+    for n in range(n_min, n_max + 1, n_step):
+        _, _, comp_times_fixed_number_of_nodes = generate_feasible_graphs(num_graphs=num_graphs, num_nodes=n,
+                                                                          radius=radius, alpha=alpha,
+                                                                          L_max=L_max, R_max=R_max, D=D, k=k)
+        comp_times[n] = comp_times_fixed_number_of_nodes
+
+    # Save computation time data in current folder
+    now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
+    with open('./comp_times_{}.txt'.format(now), 'w') as f:
+        print(comp_times, file=f)
+
+
 def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max, D, k):
     """Generate a population of geometric random graphs with feasible solutions for specified parameters.
 
@@ -240,7 +286,7 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
 
     """
 
-    graph_containers, solutions = [], []
+    graph_containers, solutions, computation_times = [], [], []
     number_of_found_graphs = 0
     number_of_tries = 0
     while number_of_found_graphs < num_graphs:
@@ -256,13 +302,14 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
         graph_container = GraphContainer(graph)
         prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
                                             R_max=R_max)
-        solution, _ = prog.solve()
+        solution, computation_time = prog.solve()
         if 'infeasible' in solution.get_status_string():
             continue
         graph_containers.append(graph_container)
         solutions.append(solution)
+        computation_times.append(computation_time)
         number_of_found_graphs += 1
-    return graph_containers, solutions
+    return graph_containers, solutions, computation_times
 
 
 def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
@@ -303,30 +350,7 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
 
 if __name__ == "__main__":
 
-     # results = RandomGraphScan(scan_param_name="L_max",
-     #           scan_param_min=0.5,
-     #           scan_param_max=1.2,
-     #           scan_param_step=.1,
-     #           num_graphs=50,
-     #           num_nodes=25,
-     #           radius=0.9,
-     #           alpha=1 / 250,
-     #           L_max=1,
-     #           R_max=6,
-     #           D=8,
-     #           k=2)
-     # results.solve()
-     # results.save("results.p")
-     filename = "effect_of_k.p"
-     results = pickle.load(open(filename, "rb"))
-     # print(results.num_graphs)
-     for _ in range(1):
-     # plot_num_repeaters(effect_of_Lmax)
-        results.add_graphs(50)
-        results.solve()
-        results.save(filename)
-        #plot_random_graph_scan(random_graph_scan=effect_of_Lmax,
-        #                       quantity="min_node_connectivity",
-        #                       ylabel="Average Node Connectivity")
-        print(results.computation_time)
+    computation_time_vs_number_of_nodes(n_min=10, n_max=60, n_step=20, num_graphs=1, radius=0.9, L_max=1, R_max=6,
+                                        D=8, k=2, alpha=0)
+
 
