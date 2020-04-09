@@ -221,7 +221,7 @@ def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius
     n_step : int
         Stepsize of scan over number of nodes.
     num_graphs : int
-        Number of feasible graphs required.
+        Number of feasible graphs required per value of the number of nodes.
     radius : float
         Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
     alpha : float
@@ -243,16 +243,19 @@ def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius
     """
 
     comp_times = {}
-    for n in range(n_min, n_max + 1, n_step):
-        _, _, comp_times_fixed_number_of_nodes = generate_feasible_graphs(num_graphs=num_graphs, num_nodes=n,
-                                                                          radius=radius, alpha=alpha,
-                                                                          L_max=L_max, R_max=R_max, D=D, k=k)
-        comp_times[n] = comp_times_fixed_number_of_nodes
-
-    # Save computation time data in current folder
     now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
-    with open('./comp_times_{}.txt'.format(now), 'w') as f:
-        print(comp_times, file=f)
+    for n in range(n_min, n_max + 1, n_step):
+        print("number of nodes = {}".format(n))
+        comp_times_fixed_number_of_nodes = []
+        for i in range(num_graphs):
+            _, _, comp_time = generate_feasible_graph(num_nodes=n, radius=radius, alpha=alpha,
+                                                      L_max=L_max, R_max=R_max, D=D, k=k)
+            comp_times_fixed_number_of_nodes.append(comp_time)
+            if i % 5 == 0 or i == num_graphs - 1:
+                # save results after every five graphs to minimize lost data
+                comp_times[n] = comp_times_fixed_number_of_nodes
+                with open('./comp_times_{}.txt'.format(now), 'w') as f:
+                    print(comp_times, file=f)
 
 
 def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max, D, k):
@@ -293,23 +296,64 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
         number_of_tries += 1
         if number_of_tries == 100 and number_of_found_graphs == 0:
             raise RuntimeError("Could not find a feasible graph in 100 tries.")
-        graph = create_graph_and_partition(num_nodes=num_nodes, radius=radius, draw=False)
-        if graph is None:
-            print("generated graph is None")  # TODO: why does this sometimes happen?
-            continue
-        if not nx.is_connected(graph):
-            continue
-        graph_container = GraphContainer(graph)
-        prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
-                                            R_max=R_max)
-        solution, computation_time = prog.solve()
-        if 'infeasible' in solution.get_status_string():
-            continue
+        graph_container, solution, computation_time = generate_feasible_graph(num_nodes=num_nodes,
+                                                                              radius=radius,
+                                                                              alpha=alpha,
+                                                                              L_max=L_max,
+                                                                              R_max=R_max,
+                                                                              D=D,
+                                                                              k=k)
         graph_containers.append(graph_container)
         solutions.append(solution)
         computation_times.append(computation_time)
         number_of_found_graphs += 1
     return graph_containers, solutions, computation_times
+
+
+def generate_feasible_graph(num_nodes, radius, alpha, L_max, R_max, D, k):
+    """Generate a single geometric random graph with a feasible solution for specified parameters.
+
+     Parameters
+     ----------
+     num_nodes : int
+         Total number of nodes in each random graph.
+     radius : float
+         Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
+     alpha : float
+         Small number used to set secondary objective.
+     L_max : int  # TODO: why can't this be a float?
+         Maximum elementary-link length.
+     R_max : int
+         Maximum number of repeaters on path.
+     D : int
+         Quantum-repeater capacity.
+     k : int
+         Robustness parameter.
+
+     Returns
+     -------
+     graph_container : list
+         Contains number_of_graphs graph container objects.
+     solution : list
+         Contains number_of_graphs solutions. solutions[i] corresponds to graph_containers[i].
+     computation_time : float
+         Number of seconds required to find the graph.
+
+     """
+    graph_container = None
+    solution = None
+    computation_time = None
+    while True:
+        graph = create_graph_and_partition(num_nodes=num_nodes, radius=radius, draw=False)
+        if graph is None or not nx.is_connected(graph):
+            continue
+        graph_container = GraphContainer(graph)
+        prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
+                                            R_max=R_max)
+        solution, computation_time = prog.solve()
+        if 'infeasible' not in solution.get_status_string():
+            break
+    return graph_container, solution, computation_time
 
 
 def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
@@ -350,7 +394,7 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
 
 if __name__ == "__main__":
 
-    computation_time_vs_number_of_nodes(n_min=10, n_max=60, n_step=20, num_graphs=1, radius=0.9, L_max=1, R_max=6,
-                                        D=8, k=2, alpha=0)
+    computation_time_vs_number_of_nodes(n_min=10, n_max=200, n_step=10, num_graphs=100, radius=0.9, L_max=1, R_max=6,
+                                        D=1000, k=1, alpha=0)
 
 
