@@ -6,8 +6,9 @@ attenuation_length = 22  # km
 
 
 def rate(elementary_link_length, number_of_repeaters, number_of_modes, swap_probability):
+    """Assumes dual-rail encoding and BSM success probability 50% at the midpoint station."""
 
-    one_mode_link_prob = np.exp(- elementary_link_length / attenuation_length)
+    one_mode_link_prob = .5 * np.exp(- elementary_link_length / attenuation_length)
     link_prob = 1 - np.power(1 - one_mode_link_prob, number_of_modes)
     success_prob = np.power(link_prob, number_of_repeaters + 1) * np.power(swap_probability, number_of_repeaters)
     return speed_of_light_in_fiber / elementary_link_length * success_prob
