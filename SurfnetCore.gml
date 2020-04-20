@@ -3,16 +3,16 @@ graph [
     id 0
     old_label "Asd001b"
     locid "Asd"
-    label "Amsterdam 1"
-    position "[4.8001117, 52.5710045]"
+    label "A'dam 2"
+    position "[4.96, 52.42]"
     unsure "None"
   ]
   node [
     id 1
     old_label "Asd002a"
+    label "A'dam 1"
+    position "[4.76, 52.42]"
     locid "Asd"
-    label "Amsterdam 2"
-    position "[4.8001117, 52.3710045]"
     unsure "None"
   ]
   node [
@@ -20,7 +20,7 @@ graph [
     old_label "Hn001a"
     locid "Hn"
     label "Hoorn"
-    position "[4.9473, 51.7755]"
+    position "[4.96, 52.57]"
     unsure "None"
   ]
   node [
@@ -28,15 +28,15 @@ graph [
     old_label "Mdmr001a"
     locid "Mdmr"
     label "Middenmeer"
-    position "[4.99484, 52.81101]"
+    position "[4.96, 52.72]"
     unsure "?"
   ]
   node [
     id 4
     old_label "Hl001a"
     locid "Hl"
-    label "Hengelo"
-    position "[6.34184, 52.26707]"
+    label "Harlingen"
+    position "[5.36, 52.87]"
     unsure "None"
   ]
   node [
@@ -44,31 +44,31 @@ graph [
     old_label "Lw001b"
     locid "Lw"
     label "Leeuwarden"
-    position "[5.7925856, 52.8000385]"
+    position "[5.7925856, 52.87]"
     unsure "None"
   ]
   node [
     id 6
     old_label "Gn001a"
     locid "Gn"
-    label "Groningen 1"
-    position "[6.5561371, 52.8141711]"
+    label "Groningen 2"
+    position "[6.18, 52.87]"
     unsure "None"
   ]
   node [
     id 7
     old_label "Gn012a"
     locid "Gn"
-    label "Groningen 2"
-    position "[6.2561371, 52.8141711]"
+    label "Groningen 1"
+    position "[6.58, 52.87]"
     unsure "None"
   ]
   node [
     id 8
     old_label "Zwt001a"
     locid "Zwt"
-    label "Zwartsluis"
-    position "[6.6, 52.59]"
+    label "Westerbork"
+    position "[6.58, 52.72]"
     unsure "?"
   ]
   node [
@@ -76,7 +76,7 @@ graph [
     old_label "Dgl001a"
     locid "Dgl"
     label "Dwingeloo"
-    position "[6.36958, 52.69355]"
+    position "[6.38, 52.72]"
     unsure "?"
   ]
   node [
@@ -84,7 +84,7 @@ graph [
     old_label "Mp001a"
     locid "Mp"
     label "Meppel"
-    position "[6.19776, 52.69355]"
+    position "[6.18, 52.72]"
     unsure "None"
   ]
   node [
@@ -92,7 +92,7 @@ graph [
     old_label "Zl001a"
     locid "Zl"
     label "Zwolle 1"
-    position "[6.2943766, 52.5089759]"
+    position "[6.18, 52.57]"
     unsure "None"
   ]
   node [
@@ -100,7 +100,7 @@ graph [
     old_label "Es001b"
     locid "Es"
     label "Enschede 1"
-    position "[6.4736, 52.21792]"
+    position "[6.38, 52.22]"
     unsure "None"
   ]
   node [
@@ -108,7 +108,7 @@ graph [
     old_label "Es001a"
     locid "Es"
     label "Enschede 2"
-    position "[6.6936, 52.21792]"
+    position "[6.58, 52.22]"
     unsure "None"
   ]
   node [
@@ -116,7 +116,7 @@ graph [
     old_label "Zp001a"
     locid "Zp"
     label "Zutphen"
-    position "[6.20609, 52.04342]"
+    position "[6.18, 52.02]"
     unsure "None"
   ]
   node [
@@ -124,15 +124,7 @@ graph [
     old_label "Nm001a"
     locid "Nm"
     label "Nijmegen 1"
-    position "[5.8612849, 51.8419902]"
-    unsure "None"
-  ]
-  node [
-    id 16
-    old_label "Asd001a"
-    locid "Asd"
-    label "Amsterdam 3"
-    position "[5.1001117, 52.3710045]"
+    position "[5.98, 51.82]"
     unsure "None"
   ]
   node [
@@ -140,7 +132,7 @@ graph [
     old_label "Alr004a"
     locid "Alr"
     label "Almere"
-    position "[5.31233, 52.37445]"
+    position "[5.36, 52.42]"
     unsure "?"
   ]
   node [
@@ -148,7 +140,7 @@ graph [
     old_label "Lls001a"
     locid "Lls"
     label "Lelystad 1"
-    position "[5.4768905, 52.5150719]"
+    position "[5.78, 52.42]"
     unsure "None"
   ]
   node [
@@ -156,7 +148,7 @@ graph [
     old_label "Zl001c"
     locid "Zl"
     label "Zwolle 2"
-    position "[6.0943766, 52.5089759]"
+    position "[5.98, 52.57]"
     unsure "None"
   ]
   node [
@@ -172,7 +164,7 @@ graph [
     old_label "Ut015b"
     locid "Ut"
     label "Utrecht 1"
-    position "[5.1104137, 52.0959422]"
+    position "[4.96, 52.02]"
     unsure "None"
   ]
   node [
@@ -180,7 +172,7 @@ graph [
     old_label "Amf001a"
     locid "Amf"
     label "Amersfoort"
-    position "[5.3842199, 52.15371]"
+    position "[5.18, 52.02]"
     unsure "None"
   ]
   node [
@@ -188,7 +180,7 @@ graph [
     old_label "Wg007a"
     locid "Wg"
     label "Wageningen 1"
-    position "[5.56322, 52.07506]"
+    position "[5.58, 52.22]"
     unsure "None"
   ]
   node [
@@ -196,7 +188,7 @@ graph [
     old_label "Wg001b"
     locid "Wg"
     label "Wageningen 2"
-    position "[5.56322, 51.87506]"
+    position "[5.58, 52.02]"
     unsure "None"
   ]
   node [
@@ -204,7 +196,7 @@ graph [
     old_label "Nm012a"
     locid "Nm"
     label "Nijmegen 2"
-    position "[5.8612849, 51.6419902]"
+    position "[5.78, 51.82]"
     unsure "None"
   ]
   node [
@@ -212,7 +204,7 @@ graph [
     old_label "Ledn001a1"
     locid "Ledn"
     label "Leiden 1"
-    position "[4.2821606, 52.360001]"
+    position "[4.56, 52.22]"
     unsure "None"
   ]
   node [
@@ -220,23 +212,23 @@ graph [
     old_label "Dt001b"
     locid "Dt"
     label "Delft 1"
-    position "[4.1583875, 52.011395]"
+    position "[4.16, 52.02]"
     unsure "None"
   ]
   node [
     id 28
     old_label "Ledn001a2"
     locid "Ledn"
-    label "Leiden 2"
-    position "[4.4821606, 52.560001]"
+    label "Leiden 3"
+    position "[4.56, 52.42]"
     unsure "None"
   ]
   node [
     id 29
     old_label "Ledn007a"
     locid "Ledn"
-    label "Leiden 3"
-    position "[4.4821606, 52.360001]"
+    label "Leiden 2"
+    position "[4.36, 52.42]"
     unsure "None"
   ]
   node [
@@ -244,7 +236,7 @@ graph [
     old_label "Gv008a"
     locid "Gv"
     label "Den Haag 1"
-    position "[4.3301374, 52.1800504]"
+    position "[4.16, 52.42]"
     unsure "None"
   ]
   node [
@@ -252,7 +244,7 @@ graph [
     old_label "Gv001a"
     locid "Gv"
     label "Den Haag 2"
-    position "[4.1101374, 52.1800504]"
+    position "[4.16, 52.22]"
     unsure "None"
   ]
   node [
@@ -260,23 +252,23 @@ graph [
     old_label "Dt010a"
     locid "Dt"
     label "Delft 2"
-    position "[4.3583875, 52.011395]"
+    position "[4.36, 52.02]"
     unsure "None"
   ]
   node [
     id 33
     old_label "Rt004a"
     locid "Rt"
-    label "Rotterdam 1"
-    position "[4.2128033, 51.8227339]"
+    label "R'dam 1"
+    position "[4.16, 51.82]"
     unsure "None"
   ]
   node [
     id 34
     old_label "Ut001a"
     locid "Ut"
-    label "Utrecht 3"
-    position "[4.9104137, 52.0959422]"
+    label "Utrecht 2"
+    position "[4.76, 52.02]"
     unsure "None"
   ]
   node [
@@ -284,7 +276,7 @@ graph [
     old_label "Lls002a"
     locid "Lls"
     label "Lelystad 2"
-    position "[5.6768905, 52.5150719]"
+    position "[5.78, 52.57]"
     unsure "None"
   ]
   node [
@@ -292,7 +284,7 @@ graph [
     old_label "Gr001a"
     locid "Gr"
     label "Gorinchem"
-    position "[4.96171, 51.93818]"
+    position "[4.76, 51.82]"
     unsure "None"
   ]
   node [
@@ -300,23 +292,23 @@ graph [
     old_label "Bd001a"
     locid "Bd"
     label "Breda 1"
-    position "[4.76288, 51.58731]"
+    position "[4.76, 51.57]"
     unsure "None"
   ]
   node [
     id 38
     old_label "Rt001a"
     locid "Rt"
-    label "Rotterdam 2"
-    position "[4.4628033, 51.6227339]"
+    label "R'dam 2"
+    position "[4.16, 51.57]"
     unsure "None"
   ]
   node [
     id 39
     old_label "Rt002b"
     locid "Rt"
-    label "Rotterdam 3"
-    position "[4.4628033, 51.8227339]"
+    label "R'dam 3"
+    position "[4.36, 51.57]"
     unsure "None"
   ]
   node [
@@ -324,7 +316,7 @@ graph [
     old_label "Ddt001a"
     locid "Ddt"
     label "Dordrecht"
-    position "[4.7778494, 51.7958081]"
+    position "[4.56, 51.57]"
     unsure "?"
   ]
   node [
@@ -332,7 +324,7 @@ graph [
     old_label "Bd011a"
     locid "Bd"
     label "Breda 2"
-    position "[4.96288, 51.58731]"
+    position "[4.96288, 51.57]"
     unsure "None"
   ]
   node [
@@ -340,7 +332,7 @@ graph [
     old_label "Tb001a"
     locid "Tb"
     label "Tilburg 1"
-    position "[5.17805, 51.55518]"
+    position "[5.18, 51.57]"
     unsure "None"
   ]
   node [
@@ -348,7 +340,7 @@ graph [
     old_label "Tb001b"
     locid "Tb"
     label "Tilburg 2"
-    position "[5.37805, 51.55518]"
+    position "[5.38, 51.57]"
     unsure "None"
   ]
   node [
@@ -356,7 +348,7 @@ graph [
     old_label "Ehv001b"
     locid "Ehv"
     label "Eindhoven 1"
-    position "[5.23784, 51.43406]"
+    position "[5.58, 51.47]"
     unsure "None"
   ]
   node [
@@ -364,15 +356,15 @@ graph [
     old_label "Niwg003a"
     locid "Niwg"
     label "Nieuwegein"
-    position "[5.18242, 51.89501]"
+    position "[5.18, 51.82]"
     unsure "?"
   ]
   node [
     id 46
     old_label "Ht001a"
     locid "Ht"
-    label "'s Hertogenbosch"
-    position "[5.2831591, 51.7148667]"
+    label "Den Bosch"
+    position "[5.38, 51.82]"
     unsure "None"
   ]
   node [
@@ -380,7 +372,7 @@ graph [
     old_label "Ehv010a"
     locid "Ehv"
     label "Eindhoven 2"
-    position "[5.48784, 51.43406]"
+    position "[5.58, 51.62]"
     unsure "None"
   ]
   node [
@@ -388,7 +380,7 @@ graph [
     old_label "Mbt001a"
     locid "Mbt"
     label "Maasbracht"
-    position "[5.89286, 51.44309]"
+    position "[5.58, 51.32]"
     unsure "None"
   ]
   node [
@@ -396,7 +388,7 @@ graph [
     old_label "Mt001a"
     locid "Mt"
     label "Maastricht"
-    position "[5.6909769, 51.251239]"
+    position "[5.78, 51.32]"
     unsure "None"
   ]
   node [
@@ -404,7 +396,7 @@ graph [
     old_label "Hrl001a"
     locid "Hrl"
     label "Heerlen"
-    position "[5.98611, 51.28428]"
+    position "[5.98, 51.32]"
     unsure "None"
   ]
   node [
@@ -412,7 +404,7 @@ graph [
     old_label "Vl001a"
     locid "Vl"
     label "Venlo"
-    position "[6.1662667, 51.4662967]"
+    position "[5.98, 51.47]"
     unsure "None"
   ]
   node [
@@ -420,7 +412,7 @@ graph [
     old_label "Dv001a"
     locid "Dv"
     label "Deventer"
-    position "[6.15551, 52.26024]"
+    position "[6.18, 52.22]"
     unsure "None"
   ]
   node [
@@ -428,7 +420,7 @@ graph [
     old_label "Ap001a"
     locid "Ap"
     label "Apeldoorn"
-    position "[5.9639463, 52.2156756]"
+    position "[5.98, 52.22]"
     unsure "?"
   ]
   node [
@@ -436,7 +428,7 @@ graph [
     old_label "Ah001a"
     locid "Ah"
     label "Arnhem"
-    position "[5.91167, 51.98466]"
+    position "[5.98, 52.02]"
     unsure "None"
   ]
   edge [
@@ -640,19 +632,19 @@ graph [
     length 25.7
   ]
   edge [
-    source 16
+    source 0
     target 17
     cls "Core"
-    start "Asd001a"
+    start "Asd001b"
     end "Alr004a"
     length 38.9
   ]
   edge [
-    source 16
+    source 0
     target 20
     cls "Core"
     start "Hvs001a"
-    end "Asd001a"
+    end "Asd001b"
     length 30.2
   ]
   edge [
@@ -920,10 +912,10 @@ graph [
     length 51.5
   ]
   edge [
-    source 48
+    source 49
     target 50
     cls "Core"
-    start "Mbt001a"
+    start "Mt001a"
     end "Hrl001a"
     length 30.7
   ]
