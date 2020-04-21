@@ -58,6 +58,9 @@ def max_length_and_rate(target_fidelity, target_rate, elementary_link_fidelity, 
           "Results\n\nLmax = {} km\nRmax = {} \n\n"
           .format(target_fidelity, target_rate, elementary_link_fidelity, number_of_modes, swap_probability, Lmax, Rmax))
 
+    return Lmax, Rmax
+
+
 if __name__ == "__main__":
 
     max_length_and_rate(target_fidelity=0.93,
