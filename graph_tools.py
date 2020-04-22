@@ -186,22 +186,36 @@ def create_graph_on_unit_cube(n_repeaters, radius, draw, seed=2):
         G.nodes[node]['type'] = 'repeater_node'
     color_map = ['blue'] * len(G.nodes)
     # Create the end nodes
-    G.add_node("C1", pos=[0, 0], type='end_node')
-    G.add_node("C2", pos=[1, 1], type='end_node')
-    G.add_node("C3", pos=[0, 1], type='end_node')
-    G.add_node("C4", pos=[1, 0], type='end_node')
-    G.add_edge("C1", 1)
-    G.add_edge("C1", 5)
-    G.add_edge("C1", 9)
-    G.add_edge("C2", 0)
-    G.add_edge("C2", 7)
-    G.add_edge("C2", 8)
-    G.add_edge("C3", 4)
-    G.add_edge("C3", 6)
-    G.add_edge("C3", 7)
-    G.add_edge("C4", 3)
-    G.add_edge("C4", 5)
-    G.add_edge("C4", 8)
+    G.add_node("C", pos=[0, 0], type='end_node')
+    G.add_node("B", pos=[1, 1], type='end_node')
+    G.add_node("A", pos=[0, 1], type='end_node')
+    G.add_node("D", pos=[1, 0], type='end_node')
+    G.nodes[3]['pos'] = [0.953, 0.750]
+    G.nodes[5]['pos'] = [0.25, 0.50]
+    # G.add_edge("C1", 1)
+    # G.add_edge("C1", 5)
+    # G.add_edge("C1", 9)
+    # G.add_edge("C2", 0)
+    # G.add_edge("C2", 7)
+    # G.add_edge("C2", 8)
+    # G.add_edge("C3", 4)
+    # G.add_edge("C3", 6)
+    # G.add_edge("C3", 7)
+    # G.add_edge("C4", 3)
+    # G.add_edge("C4", 5)
+    # G.add_edge("C4", 8)
+    G.add_edge("C", 8)
+    G.add_edge("C", 5)
+    G.add_edge("C", 2)
+    G.add_edge("B", 9)
+    G.add_edge("B", 4)
+    G.add_edge("B", 3)
+    G.add_edge("A", 1)
+    G.add_edge("A", 2)
+    G.add_edge("A", 9)
+    G.add_edge("D", 3)
+    G.add_edge("D", 6)
+    G.add_edge("D", 7)
     color_map.extend(['green'] * 4)
     for node in G.nodes():
         G.nodes[node]['xcoord'] = G.nodes[node]['pos'][0]
@@ -258,18 +272,29 @@ def draw_graph(G):
             repeater_nodes.append(node)
         else:
             end_nodes.append(node)
-    fig, ax = plt.subplots(figsize=(10, 7))
-    end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=700,
-                                       node_color=[[1.0, 140 / 255, 0.]], label="End Node")
+    fig, ax = plt.subplots(figsize=(7, 7))
+    end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=1500,
+                                       node_color=[[1.0, 140 / 255, 0.]], label="End Node", linewidths=3)
     end_nodes.set_edgecolor('k')
-    rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=700,
-                                       node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node")
+    rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=1500,
+                                       node_color=[[1, 1, 1]], label="Repeater Node")
     rep_nodes.set_edgecolor('k')
-    nx.draw_networkx_labels(G=G, pos=pos, font_size=15, font_weight="bold")
+    end_node_labels = {}
+    repeater_node_labels = {}
+    for node, nodedata in G.nodes.items():
+        # labels[node] = node
+        if G.nodes[node]['type'] == 'end_node':  # or node in self.repeater_nodes_chosen:
+            end_node_labels[node] = node
+        else:
+            repeater_node_labels[node] = node
+    nx.draw_networkx_labels(G=G, pos=pos, labels=end_node_labels, font_size=30, font_weight="bold", font_color="w",
+                            font_family='serif')
+    # nx.draw_networkx_labels(G=G, pos=pos, labels=repeater_node_labels, font_size=30, font_weight="bold")
     nx.draw_networkx_edges(G=G, pos=pos, width=1)
     plt.axis('off')
     margin = 0.33
     fig.subplots_adjust(margin, margin, 1. - margin, 1. - margin)
     ax.axis('equal')
     fig.tight_layout()
+    # plt.savefig("/mnt/c/Users/Julian/OneDrive/Master AP/Thesis/Paper Repeater Placement/example_square_base.eps")
     plt.show()

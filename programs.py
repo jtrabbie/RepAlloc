@@ -41,7 +41,7 @@ class Program:
         self.graph_container = graph_container
         self.R_max = min(self.graph_container.num_repeater_nodes, R_max)
         self.L_max = L_max
-        self._check_for_feasibility()
+        # self._check_for_feasibility()
         self.D = min(self.graph_container.num_unique_pairs, D)
         if not (type(k) == int or k.is_integer()):
             raise ValueError("k should be an integer, not {}".format(k))

@@ -56,6 +56,31 @@ def plot_connectivity_and_num_reps(res, xdata, xlabel, L_max, R_max, k, D, n):
 
 if __name__ == "__main__":
     """Script to run, added a bunch of examples so you can have a look how things work."""
+    # with open('./comp_times_2020-04-10_10-07-59.txt', 'r') as f:
+    #     ct = eval(f.read())
+    # print(ct)
+    # for n in ct:
+    #     print(n, np.mean(ct[n]), np.std(ct[n]))
+    # comp_times = {}
+    # num_graphs = 100
+    # for n in range(10, 111, 10):
+    #     num_suc = 0
+    #     comp_times[n] = []
+    #     while num_suc < num_graphs:
+    #         seed = np.random.randint(0, 1e5)
+    #         print(n, seed)
+    #         G = create_graph_and_partition(num_nodes=n, radius=0.9, seed=seed)
+    #         prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=1, R_max=6, D=8, k=2, alpha=0)
+    #         sol, comp_time = prog.solve()
+    #         # Only add feasible solutions to computation time data
+    #         if 'infeasible' not in sol.get_status_string():
+    #             print(comp_time)
+    #             comp_times[n].append(comp_time)
+    #             num_suc += 1
+    # Save computation time data in current folder
+    # now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
+    # with open('./comp_times_{}.txt'.format(now), 'w') as f:
+    #     print(comp_times, file=f)
 
     """Read the Colt data set (European data) and plot the solution"""
     # G = read_graph('Colt.gml', draw=False)
@@ -67,8 +92,10 @@ if __name__ == "__main__":
     # sol.draw_virtual_solution_graph()
 
     """Create a random graph with 4 fixed end nodes on the vertices of a unit cube and 10 repeater nodes."""
-    G = create_graph_on_unit_cube(n_repeaters=10, radius=0.5, draw=True, seed=2)
-    prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=0.75, R_max=3, D=30, k=1, alpha=1/100)
+    G = create_graph_on_unit_cube(n_repeaters=10, radius=0.6, draw=True, seed=9)
+    # prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=0.75, R_max=3, D=30, k=1, alpha=1/100)
+    prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=0.9, R_max=3, D=6, k=3,
+                                        alpha=0)
     sol, _ = prog.solve()
     # sol.draw_virtual_solution_graph()
     sol.draw_physical_solution_graph()
@@ -115,53 +142,53 @@ if __name__ == "__main__":
     # with open('./data/res_k_2020-02-27_04-03-59.txt', 'r') as f:
     #     res = eval(f.read())
     # Loop over values of k
-    max_k = 6
-    k_vals = list(range(1, max_k + 1))
-    num_suc_max = 50  # Number of feasible graphs we want to extract data from
-    # TODO: fix this such that the same N graphs are used and infeasible data is not thrown away
-    n = 25  # Number of nodes *in total*. Note that the number of (s,t)-pairs differs based on the convex hull
-    L_max = 0.9
-    R_max = 5
-    D = 8
-    alpha = 1 / 250
-    changing_var = 'k'
-    res = {}
-    save_data = True
-    rep_node_degree_data = []
-    for k in k_vals:
-        min_node_con = []
-        avg_node_con = []
-        min_edge_con = []
-        avg_edge_con = []
-        num_reps = []
-        num_suc = 0
-        while num_suc < num_suc_max:
-            G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=False)
-            prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), D=D, k=k, alpha=alpha, L_max=L_max,
-                                                R_max=R_max)
-            sol, _ = prog.solve()
-            if 'infeasible' in sol.get_status_string():
-                continue
-            print("num_suc = {}, k = {}, D = {}".format(num_suc, k, D))
-            print(sol.get_solution_data())
-            rep_node_degree_data.append(sol.get_solution_data()['repeater_node_degree'])
-            print(rep_node_degree_data)
-            # sol.draw_virtual_solution_graph()
-
-            min_node_connectivity, avg_node_connectivity = sol.compute_node_connectivy()
-            min_edge_connectivity, avg_edge_connectivity = sol.compute_edge_connectivity()
-            num_reps.append(sol.get_solution_data()['num_reps'])
-            min_node_con.append(min_node_connectivity)
-            avg_node_con.append(avg_node_connectivity)
-            min_edge_con.append(min_edge_connectivity)
-            avg_edge_con.append(avg_edge_connectivity)
-            num_suc += 1
-        res[k] = (num_reps, min_node_con, avg_node_con, min_edge_con, avg_edge_con)
-    sol.plot_degree_histogram()
-    if save_data:
-        now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
-        with open('./data/res_{}_{}.txt'.format(changing_var, now), 'w') as f:
-            print(res, file=f)
-    plot_connectivity_and_num_reps(res=res, xdata=k_vals, xlabel=changing_var, L_max=L_max, R_max=R_max,
-                                   n=n, D=8, k=2)
+    # max_k = 6
+    # k_vals = list(range(1, max_k + 1))
+    # num_suc_max = 50  # Number of feasible graphs we want to extract data from
+    # # TODO: fix this such that the same N graphs are used and infeasible data is not thrown away
+    # n = 25  # Number of nodes *in total*. Note that the number of (s,t)-pairs differs based on the convex hull
+    # L_max = 0.9
+    # R_max = 5
+    # D = 8
+    # alpha = 1 / 250
+    # changing_var = 'k'
+    # res = {}
+    # save_data = True
+    # rep_node_degree_data = []
+    # for k in k_vals:
+    #     min_node_con = []
+    #     avg_node_con = []
+    #     min_edge_con = []
+    #     avg_edge_con = []
+    #     num_reps = []
+    #     num_suc = 0
+    #     while num_suc < num_suc_max:
+    #         G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=False)
+    #         prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), D=D, k=k, alpha=alpha, L_max=L_max,
+    #                                             R_max=R_max)
+    #         sol, _ = prog.solve()
+    #         if 'infeasible' in sol.get_status_string():
+    #             continue
+    #         print("num_suc = {}, k = {}, D = {}".format(num_suc, k, D))
+    #         print(sol.get_solution_data())
+    #         rep_node_degree_data.append(sol.get_solution_data()['repeater_node_degree'])
+    #         print(rep_node_degree_data)
+    #         # sol.draw_virtual_solution_graph()
+    #
+    #         min_node_connectivity, avg_node_connectivity = sol.compute_node_connectivy()
+    #         min_edge_connectivity, avg_edge_connectivity = sol.compute_edge_connectivity()
+    #         num_reps.append(sol.get_solution_data()['num_reps'])
+    #         min_node_con.append(min_node_connectivity)
+    #         avg_node_con.append(avg_node_connectivity)
+    #         min_edge_con.append(min_edge_connectivity)
+    #         avg_edge_con.append(avg_edge_connectivity)
+    #         num_suc += 1
+    #     res[k] = (num_reps, min_node_con, avg_node_con, min_edge_con, avg_edge_con)
+    # sol.plot_degree_histogram()
+    # if save_data:
+    #     now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
+    #     with open('./data/res_{}_{}.txt'.format(changing_var, now), 'w') as f:
+    #         print(res, file=f)
+    # plot_connectivity_and_num_reps(res=res, xdata=k_vals, xlabel=changing_var, L_max=L_max, R_max=R_max,
+    #                                n=n, D=8, k=2)
 

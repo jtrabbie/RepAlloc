@@ -249,37 +249,49 @@ class Solution:
         pos = nx.get_node_attributes(self.program.graph_container.graph, 'pos')
         labels = {}
         for node, nodedata in self.program.graph_container.graph.nodes.items():
-            if node in self.program.graph_container.end_nodes or node in self.repeater_nodes_chosen:
+            # labels[node] = node
+            if node in self.program.graph_container.end_nodes: # or node in self.repeater_nodes_chosen:
                 labels[node] = node
             else:
                 labels[node] = ""
         # Empty figure
-        fig, ax = plt.subplots(figsize=(10, 7))
+        fig, ax = plt.subplots(figsize=(7, 7))
         # First draw end nodes
-        end_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=700,
+        end_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=1500,
                                            nodelist=self.program.graph_container.end_nodes,
-                                           node_shape='s', node_color=[[1.0, 140 / 255, 0.]], label="End Node")
+                                           node_shape='s', node_color=[[255 / 255, 120 / 255, 0 / 255]], label="End Node",
+                                           linewidths=3)  # [[1.0, 140 / 255, 0.]]
         end_nodes.set_edgecolor('k')
         # Then draw the repeater nodes
         if self.repeater_nodes_chosen:
-            rep_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=700,
+            rep_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=1500, node_shape='h',
                                                nodelist=self.repeater_nodes_chosen, node_color=[[0 / 255, 166 / 255, 214 / 255]],
-                                               label="Repeater Node")
+                                               label="Repeater Node", linewidths=3)
             rep_nodes.set_edgecolor('k')
         # Then draw the link-extension nodes
         if self.link_extension_nodes:
-            le_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=700,
-                                              nodelist=self.link_extension_nodes, node_color=[[0.83, 0.83, 0.83]],
-                                              label="Link Extension", alpha=0.4)
+            le_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=1500,
+                                              nodelist=self.link_extension_nodes, node_color=[[1, 1, 1]],
+                                              label="Link Extension")
             le_nodes.set_edgecolor('k')
-        # Draw the used edges
-        nx.draw_networkx_edges(G=self.program.graph_container.graph, pos=pos, edgelist=self.used_edges, width=3)
+        # Also draw all the unused nodes
+        unused_nodes = []
+        [unused_nodes.append(n) for n in self.program.graph_container.graph.nodes() if
+         (n not in self.link_extension_nodes and n not in self.repeater_nodes_chosen
+          and n not in self.program.graph_container.end_nodes)]
+        if unused_nodes:
+            unu_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=1500,
+                                               nodelist=unused_nodes, node_color=[[1, 1, 1]])
+            unu_nodes.set_edgecolor('k')
         # Draw the unused edges but less visible
-        nx.draw_networkx_edges(G=self.program.graph_container.graph, pos=pos, edgelist=self.unused_edges, edge_color="k",
-                               width=1, alpha=0.2)
+        nx.draw_networkx_edges(G=self.program.graph_container.graph, pos=pos, edgelist=self.unused_edges,
+                               edge_color=[[170 / 255, 170 / 255, 170 / 255]], width=1)
+        # Draw the used edges
+        nx.draw_networkx_edges(G=self.program.graph_container.graph, pos=pos, edgelist=self.used_edges, width=8,
+                               edge_color=[[0 / 255, 166 / 255, 214 / 255]])
         # Draw all the node labels
-        nx.draw_networkx_labels(G=self.program.graph_container.graph, pos=pos, labels=labels, font_size=17,
-                                font_weight="bold")
+        nx.draw_networkx_labels(G=self.program.graph_container.graph, pos=pos, labels=labels, font_size=30,
+                                font_weight="bold", font_color="w", font_family='serif')
 
         # nx.draw(self.graph_container.graph, labels=labels, with_labels=True, font_weight='bold',
         #        pos=pos, node_color=color_map, node_size=200)
@@ -288,7 +300,8 @@ class Solution:
         fig.subplots_adjust(margin, margin, 1. - margin, 1. - margin)
         ax.axis('equal')
         fig.tight_layout()
-        plt.legend(loc='center left', fontsize=13, prop={'size': 20})
+        # plt.legend(loc='center left', fontsize=13, prop={'size': 20})
+        # plt.savefig("/mnt/c/Users/Julian/OneDrive/Master AP/Thesis/Paper Repeater Placement/example_square_k3_new.eps")
         plt.show()
 
     def compute_node_connectivy(self):
