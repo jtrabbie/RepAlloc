@@ -97,7 +97,7 @@ def read_graph(file, draw=False):
         # QIA Members: IQOQI, UOI (Innsbruck), CNRS (Paris), ICFO (Barcelona), IT (Lisbon),
         #              MPQ (Garching [DE] -> Munich), NBI (Copenhagen), QuTech (Delft -> The Hague), UOB (Basel),
         #              UOG (Geneva)
-        # NOTE: Graching replaced by Munic, Delft by The Hague
+        # NOTE: Graching replaced by Munich, Delft by The Hague
         # end_node_list = ['Innsbruck', 'Paris', 'Barcelona', 'Lisbon', 'Copenhagen', 'TheHague', 'Basel', 'Geneva',
         #             'Stuttgart']
         end_node_list = ['Innsbruck', 'Paris', 'Copenhagen', 'TheHague', 'Rome', 'Barcelona']

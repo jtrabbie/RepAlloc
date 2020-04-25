@@ -211,7 +211,7 @@ class Solution:
     def print_path_data(self):
         for k in range(self.program.k):
             for key in self.path_data:
-                print("k = {}, q = {}: path = {}, num_el = {}, reps = {}, path_cost = {}".format(k, key,
+                print("k = {}, q = {}: path = {}, num_el = {}, reps = {}, path_cost = {}".format(k + 1, key,
                       self.path_data[key]['paths'][k],
                       self.path_data[key]['num_el_used'][k],
                       self.path_data[key]['repeater_nodes_used'][k],
