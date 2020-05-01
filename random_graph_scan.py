@@ -176,10 +176,11 @@ class RandomGraphScan:
                 # skip if all solutions are already present for this parameter value
                 parameters.update({self.scan_param_name: value})
                 graphs_without_solution = self.graphs[-num_missing_solutions:]
-                new_solutions = solve_graphs(graph_containers=graphs_without_solution,
-                                             alpha=self.alpha,
-                                             **parameters)
-                solutions_data_this_value += [new_solution.get_solution_data() for new_solution in new_solutions]
+                for graph in graphs_without_solution:
+                    [new_solution] = solve_graphs(graph_containers=[graph],
+                                                  alpha=self.alpha,
+                                                  **parameters)
+                    solutions_data_this_value.append(new_solution.get_solution_data())
             calculation_time = time.time() - start_time
             print("Solving {} graphs succeeded after {} seconds.".format(num_missing_solutions, calculation_time))
             self.computation_time += calculation_time
@@ -276,7 +277,7 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
     number_of_tries = 0
     while number_of_found_graphs < num_graphs:
         number_of_tries += 1
-        if number_of_tries == 100 and number_of_found_graphs == 0:
+        if number_of_tries == 10000 and number_of_found_graphs == 0:
             raise RuntimeError("Could not find a feasible graph in 100 tries.")
         graph = create_graph_and_partition(num_nodes=num_nodes, radius=radius, draw=False)
         if graph is None:
@@ -334,30 +335,32 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
 
 if __name__ == "__main__":
 
-    results = RandomGraphScan(scan_param_name="L_max",
-                              scan_param_min=0.7,
-                              scan_param_max=1.2,
-                              scan_param_step=0.1,
-                              num_graphs=50,
+    results = RandomGraphScan(scan_param_name="k",
+                              scan_param_min=1,
+                              scan_param_max=6,
+                              scan_param_step=1,
+                              num_graphs=0,
                               num_nodes=25,
                               radius=0.9,
                               alpha=1 / 250,
-                              L_max=0.7,
+                              L_max=0.9,
                               R_max=6,
                               D=4,
                               k=6)
-    results.solve()
-    filename = "effect_of_Lmax_v3.p"
+    # results.solve()
+    filename = "effect_of_k_v4.p"
     results.save(filename)
     # results = pickle.load(open(filename, "rb"))
-    # other_filename = "effect_of_Lmax_v3.p"
-    # other_results = pickle.load(open(other_filename, "rb"))
-    # results.add_graphs_from_other_random_graph_scan(other_results)
-
-    for _ in range(19):
-        results.generate_new_graphs(50)
-        results.solve()
-        results.save(filename)
+    other_filename = "effect_of_Lmax_v4.p"
+    other_results = pickle.load(open(other_filename, "rb"))
+    results.add_graphs_from_other_random_graph_scan(other_results)
+    results.save(filename)
+    results.solve()
+    results.save(filename)
+    # for _ in range(99):
+    #     results.generate_new_graphs(10)
+    #     results.solve()
+    #     results.save(filename)
 
     # plot_random_graph_scan(random_graph_scan=results,
     #                       quantity="min_node_connectivity",
