@@ -1,5 +1,5 @@
-from programs import EdgeDisjointLinkBasedProgram, EdgeDisjointPathBasedProgram,\
-    NodeDisjointPathBasedProgram, NodeDisjointLinkBasedProgram
+from formulations import EdgeDisjointLinkBasedProgram, EdgeDisjointPathBasedProgram,\
+    PathBasedFormulation, LinkBasedFormulation
 from graph_tools import GraphContainer, create_graph_and_partition, read_graph, create_graph_on_unit_cube
 from solution import Solution
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     """Create a random graph with 4 fixed end nodes on the vertices of a unit cube and 10 repeater nodes."""
     G = create_graph_on_unit_cube(n_repeaters=10, radius=0.5, draw=True, seed=2)
-    prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=0.75, R_max=3, D=30, k=1, alpha=1/100)
+    prog = LinkBasedFormulation(graph_container=GraphContainer(G), L_max=0.75, N_max=3, D=30, K=1, alpha=1 / 100)
     sol, _ = prog.solve()
     # sol.draw_virtual_solution_graph()
     sol.draw_physical_solution_graph()
@@ -137,8 +137,8 @@ if __name__ == "__main__":
         num_suc = 0
         while num_suc < num_suc_max:
             G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=False)
-            prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), D=D, k=k, alpha=alpha, L_max=L_max,
-                                                R_max=R_max)
+            prog = LinkBasedFormulation(graph_container=GraphContainer(G), D=D, K=k, alpha=alpha, L_max=L_max,
+                                        N_max=R_max)
             sol, _ = prog.solve()
             if 'infeasible' in sol.get_status_string():
                 continue
