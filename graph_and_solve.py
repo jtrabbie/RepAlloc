@@ -93,11 +93,11 @@ if __name__ == "__main__":
     """Create a random graph with 4 fixed end nodes on the vertices of a unit cube and 10 repeater nodes."""
     G = create_graph_on_unit_cube(n_repeaters=10, radius=0.6, draw=False, seed=9)
     # prog = LinkBasedFormulation(graph_container=GraphContainer(G), L_max=0.75, N_max=3, D=30, K=1, alpha=1/100)
-    prog = LinkBasedFormulation(graph_container=GraphContainer(G), L_max=0.9, N_max=3, D=6, K=1, alpha=0)
+    prog = PathBasedFormulation(graph_container=GraphContainer(G), L_max=0.9, N_max=3, D=6, K=2, alpha=0)
     sol, _ = prog.solve()
-    # sol.draw_virtual_solution_graph()
-    sol.draw_physical_solution_graph()
-    # sol.print_path_data()
+    sol.draw_virtual_solution_graph()
+    #sol.draw_physical_solution_graph()
+    #sol.print_path_data()
 
     """Create random graph and use the convex hull to partition the nodes"""
     # G = create_graph_and_partition(num_nodes=25, radius=0.5, seed=130, draw=True)

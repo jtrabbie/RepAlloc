@@ -78,7 +78,7 @@ class Solution:
         return x_variables_chosen, repeater_nodes_chosen
 
     def _process_x_variables(self):
-        pair_dict = {(q[0], q[1]): {} for q in self.formulation.graph_container.unique_end_node_pairs}
+        path_data = {(q[0], q[1]): {} for q in self.formulation.graph_container.unique_end_node_pairs}
         repeater_node_degree = {u: 0 for u in self.repeater_nodes_chosen}
         total_cost, tot_num_el = 0, 0
         for q in self.formulation.graph_container.unique_end_node_pairs:
@@ -100,6 +100,11 @@ class Solution:
                     cost_per_path.append(cost_this_path)
                     total_cost += cost_this_path
                     repeater_nodes_used.append(r_up)
+                local_dict = path_data[(q[0], q[1])]
+                local_dict['paths'] = paths
+                local_dict['num_el_used'] = num_el_used
+                local_dict['repeater_nodes_used'] = repeater_nodes_used
+                local_dict['path_cost'] = cost_per_path
             else:
                 # We are processing a link-based formulation
                 elementary_links_current_pair = [tup for tup in self.x_variables_chosen if tup[0] == q]
@@ -140,21 +145,37 @@ class Solution:
                     if len(repeater_nodes_used) == old_len_rep_nodes:
                         repeater_nodes_used.append([])
                     paths.append(path)
-                local_dict = pair_dict[(q[0], q[1])]
+                local_dict = path_data[(q[0], q[1])]
                 local_dict['paths'] = paths
                 local_dict['num_el_used'] = num_el_used
                 local_dict['repeater_nodes_used'] = repeater_nodes_used
                 local_dict['path_cost'] = cost_per_path
 
-        used_elementary_links, used_edges, visited_nodes = [], [], []
+        used_elementary_links, used_edges, visited_nodes = [], [], set()
 
         for tup in self.x_variables_chosen:
             elementary_link_path = tup[1]
-            used_elementary_links.append((elementary_link_path[0], elementary_link_path[-1]))
-            visited_nodes.extend(elementary_link_path)
+            if "Path" in str(type(self.formulation)):
+                # Deconstruct the path to its elementary links
+                r_up = tup[2]
+                if not r_up:
+                    # Direct elementary link is used as a path
+                    used_elementary_links.append((elementary_link_path[0], elementary_link_path[-1]))
+                else:
+                    starting_node = elementary_link_path[0]
+                    for i in range(1, len(elementary_link_path)):
+                        cur_node = elementary_link_path[i]
+                        if cur_node in r_up:
+                            used_elementary_links.append((starting_node, cur_node))
+                            starting_node = cur_node
+                    # Add one more elementary link from the last repeater node to t
+                    used_elementary_links.append((starting_node, elementary_link_path[-1]))
+            else:
+                used_elementary_links.append((elementary_link_path[0], elementary_link_path[-1]))
+            visited_nodes.update(elementary_link_path)
             for i in range(len(elementary_link_path) - 1):
                 used_edges.append((elementary_link_path[i], elementary_link_path[i+1]))
-        self.visited_nodes = list(set(visited_nodes))
+        self.visited_nodes = list(visited_nodes)
         self.link_extension_nodes = list(set([i for i in visited_nodes if i not in self.repeater_nodes_chosen
                                               and i not in self.formulation.graph_container.end_nodes]))
         self.used_elementary_links = used_elementary_links
@@ -170,7 +191,7 @@ class Solution:
         self.overall_data['avg_path_len'] = round(total_cost / self.formulation.graph_container.num_unique_pairs)
         self.overall_data['tot_num_el'] = tot_num_el
         self.overall_data['repeater_node_degree'] = repeater_node_degree
-        return pair_dict
+        return path_data
 
     def _create_virtual_solution_graph(self):
         """Create a virtual graph based on the solution where the edges are elementary links."""
@@ -211,22 +232,29 @@ class Solution:
     def draw_virtual_solution_graph(self):
         pos = nx.get_node_attributes(self.virtual_solution_graph, 'pos')
         # Create blank figure
-        fig, ax = plt.subplots(figsize=(10, 7))
+        fig, ax = plt.subplots(figsize=(7, 7))
         # First draw the end nodes
-        end_nodes = nx.draw_networkx_nodes(G=self.virtual_solution_graph, pos=pos, node_size=700,
+        end_nodes = nx.draw_networkx_nodes(G=self.virtual_solution_graph, pos=pos, node_size=1500,
                                            nodelist=self.formulation.graph_container.end_nodes,
-                                           node_shape='s', node_color=[[1.0, 140 / 255, 0.]], label="End Node")
+                                           node_shape='s', node_color=[[255 / 255, 120 / 255, 0 / 255]],
+                                           label="End Node",
+                                           linewidths=3)
         end_nodes.set_edgecolor('k')
         # Then draw the repeater nodes
         if self.repeater_nodes_chosen:
-            rep_nodes = nx.draw_networkx_nodes(G=self.virtual_solution_graph, pos=pos, node_size=700,
-                                               nodelist=self.repeater_nodes_chosen,
-                                               node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node")
+            rep_nodes = nx.draw_networkx_nodes(G=self.virtual_solution_graph, pos=pos, node_size=1500,
+                                               node_shape='h', nodelist=self.repeater_nodes_chosen,
+                                               node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node",
+                                               linewidths=3)
             rep_nodes.set_edgecolor('k')
         # Finally draw the elementary links
-        nx.draw_networkx_edges(G=self.virtual_solution_graph, pos=pos, edgelist=self.used_elementary_links, width=3)
-        # And draw in the labels of the nodes
-        nx.draw_networkx_labels(G=self.virtual_solution_graph, pos=pos, font_weight='bold')
+        print(self.used_elementary_links)
+        nx.draw_networkx_edges(G=self.virtual_solution_graph, pos=pos, edgelist=self.used_elementary_links, width=8)
+        # Draw all the node labels
+        labels = {node: node if node in self.formulation.graph_container.end_nodes else ""
+                  for node, nodedata in self.virtual_solution_graph.nodes.items()}
+        nx.draw_networkx_labels(G=self.virtual_solution_graph, pos=pos, labels=labels, font_size=30,
+                                font_weight="bold", font_color="w", font_family='serif')
         # Change some margins etc
         plt.axis('off')
         margin = 0.33
@@ -241,7 +269,7 @@ class Solution:
         labels = {}
         for node, nodedata in self.formulation.graph_container.graph.nodes.items():
             # labels[node] = node
-            if node in self.formulation.graph_container.end_nodes: # or node in self.repeater_nodes_chosen:
+            if node in self.formulation.graph_container.end_nodes:
                 labels[node] = node
             else:
                 labels[node] = ""
@@ -250,14 +278,15 @@ class Solution:
         # First draw end nodes
         end_nodes = nx.draw_networkx_nodes(G=self.formulation.graph_container.graph, pos=pos, node_size=1500,
                                            nodelist=self.formulation.graph_container.end_nodes,
-                                           node_shape='s', node_color=[[255 / 255, 120 / 255, 0 / 255]], label="End Node",
-                                           linewidths=3)  # [[1.0, 140 / 255, 0.]]
+                                           node_shape='s', node_color=[[255 / 255, 120 / 255, 0 / 255]],
+                                           label="End Node", linewidths=3)
         end_nodes.set_edgecolor('k')
         # Then draw the repeater nodes
         if self.repeater_nodes_chosen:
-            rep_nodes = nx.draw_networkx_nodes(G=self.formulation.graph_container.graph, pos=pos, node_size=1500, node_shape='h',
-                                               nodelist=self.repeater_nodes_chosen, node_color=[[0 / 255, 166 / 255, 214 / 255]],
-                                               label="Repeater Node", linewidths=3)
+            rep_nodes = nx.draw_networkx_nodes(G=self.formulation.graph_container.graph, pos=pos, node_size=1500,
+                                               node_shape='h', nodelist=self.repeater_nodes_chosen,
+                                               node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node",
+                                               linewidths=3)
             rep_nodes.set_edgecolor('k')
         # Then draw the link-extension nodes
         if self.link_extension_nodes:
