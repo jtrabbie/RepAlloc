@@ -7,7 +7,6 @@ import pickle
 import networkx as nx
 from copy import deepcopy
 import time
-import pandas as pd
 
 
 class RandomGraphScan:
@@ -287,6 +286,9 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, N_max,
         Contains number_of_graphs graph container objects.
     solutions : list
         Contains number_of_graphs solutions. solutions[i] corresponds to graph_containers[i].
+    computation_times : list
+        Contains number_of_graphs computation times.
+        computation_times[i] is the amount of seconds it took to find the feasible graph graph_container[i].
 
     """
 
