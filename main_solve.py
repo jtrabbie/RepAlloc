@@ -1,5 +1,6 @@
 from formulations import PathBasedFormulation, LinkBasedFormulation
 from graph_tools import GraphContainer, create_graph_and_partition, read_graph_from_gml, create_graph_on_unit_cube
+from determine_Lmax_Rmax import max_length_and_rate
 import numpy as np
 
 
@@ -74,8 +75,26 @@ def compare_formulations():
             print("Same solutions.")
 
 
+def surfnet_solve():
+    """Read the Surfnet core data set (Dutch fiber infrastructure) and plot the solution."""
+    L_max, N_max = max_length_and_rate(target_fidelity=0.93,
+                                       target_rate=1,
+                                       elementary_link_fidelity=0.99,
+                                       number_of_modes=1000,
+                                       swap_probability=.5)
+    G = read_graph_from_gml('SurfnetCore.gml', draw=False)
+    prog = LinkBasedFormulation(graph_container=GraphContainer(G), L_max=L_max, N_max=N_max, D=4, K=2,
+                                alpha=1 / 75000)
+    sol, comp_time = prog.solve()
+    print("Computation Time:", comp_time)
+    sol.draw_physical_solution_graph()
+    # sol.draw_virtual_solution_graph()
+
+
 if __name__ == "__main__":
+    pass
+    surfnet_solve()
     # solve_from_gml("Surfnet.gml", L_max=60, N_max=11, D=100, K=1, alpha=1 / 2500)
     # solve_on_unit_cube(L_max=0.9, N_max=3, D=6, K=1)
     # solve_with_random_graph()
-    compare_formulations()
+    # compare_formulations()
