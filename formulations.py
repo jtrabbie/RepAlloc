@@ -244,7 +244,7 @@ class LinkBasedFormulation(Formulation):
                                                                         'DisLinkCon' + pairname + '_' + j,
                                                                         'LinkXYCon_' + j],
                                                                    val=[1.0, -1.0, 1.0, 1.0, 1.0])]
-                                # Add x_{ij}^{q,k} variables
+                                # Add x_{ij}^{q,K} variables
                                 cplex_var = self.cplex.variables.add(obj=[self.alpha * path_cost], ub=[1],
                                                                      columns=column, types=['B'],
                                                                      names=["x" + pairname + "_" + str(i) + "," + str(j)

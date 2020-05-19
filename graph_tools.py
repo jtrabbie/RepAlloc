@@ -220,10 +220,10 @@ def draw_graph(G):
     fig, ax = plt.subplots(figsize=(7, 7))
     end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=1500,
                                        node_color=[[1.0, 120 / 255, 0.]], label="End Node", linewidths=3)
-    end_nodes.set_edgecolor('k')
+    end_nodes.set_edgecolor('K')
     rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=1500,
                                        node_color=[[1, 1, 1]], label="Repeater Node")
-    rep_nodes.set_edgecolor('k')
+    rep_nodes.set_edgecolor('K')
     end_node_labels = {}
     repeater_node_labels = {}
     for node, nodedata in G.nodes.items():

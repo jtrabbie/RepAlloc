@@ -32,11 +32,11 @@ class RandomGraphScan:
         Small number used to set secondary objective.
     L_max : float
         Maximum elementary-link length.
-    R_max : int
+    N_max : int
         Maximum number of repeaters on path.
     D : int
         Quantum-repeater capacity.
-    k : int
+    K : int
         Robustness parameter.
 
     Notes
@@ -46,7 +46,7 @@ class RandomGraphScan:
     """
 
     def __init__(self, scan_param_name, scan_param_min, scan_param_max, scan_param_step,
-                 num_graphs, num_nodes, radius, alpha, L_max, R_max, D, k):
+                 num_graphs, num_nodes, radius, alpha, L_max, N_max, D, K):
 
         self.scan_param_name = scan_param_name
         self.scan_param_min = scan_param_min
@@ -60,18 +60,18 @@ class RandomGraphScan:
         self.num_nodes = num_nodes
         self.radius = radius
         self.L_max = L_max
-        self.R_max = R_max
+        self.N_max = N_max
         self.D = D
-        self.k = k
+        self.K = K
         self.alpha = alpha
         self.graphs = []
         self.solutions_data = {}
         self.computation_time = 0
         self.all_solved = False
         self.most_restrictive_parameters = {"L_max": L_max,
-                                            "N_max": R_max,
+                                            "N_max": N_max,
                                             "D": D,
-                                            "K": k}
+                                            "K": K}
 
         # set scan parameter to most restrictive value
         if scan_param_name == "L_max":
@@ -209,7 +209,7 @@ def plot_random_graph_scan(random_graph_scan, quantity, ylabel):
     plt.show()
 
 
-def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius, alpha, L_max, R_max, D, k):
+def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius, alpha, L_max, N_max, D, K):
     """Determine computation time as a function of the number of nodes in a random geometric graph.
 
     Parameters
@@ -228,11 +228,11 @@ def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius
         Small number used to set secondary objective.
     L_max : float
         Maximum elementary-link length.
-    R_max : int
+    N_max : int
         Maximum number of repeaters on path.
     D : int
         Quantum-repeater capacity.
-    k : int
+    K : int
         Robustness parameter.
 
     Notes
@@ -249,7 +249,7 @@ def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius
         comp_times_fixed_number_of_nodes = []
         for i in range(num_graphs):
             _, _, comp_time = generate_feasible_graph(num_nodes=n, radius=radius, alpha=alpha,
-                                                      L_max=L_max, N_max=R_max, D=D, K=k)
+                                                      L_max=L_max, N_max=N_max, D=D, K=K)
             comp_times_fixed_number_of_nodes.append(comp_time)
             if i % 5 == 0 or i == num_graphs - 1:
                 # save results after every five graphs to minimize lost data
@@ -398,5 +398,5 @@ def solve_graphs(graph_containers, alpha, L_max, N_max, D, K):
 
 if __name__ == "__main__":
 
-    computation_time_vs_number_of_nodes(n_min=30, n_max=50, n_step=10, num_graphs=10, radius=0.9, L_max=1, R_max=6,
-                                        D=1000, k=1, alpha=0)
+    computation_time_vs_number_of_nodes(n_min=30, n_max=50, n_step=10, num_graphs=10, radius=0.9, L_max=1, N_max=6,
+                                        D=1000, K=1, alpha=0)
