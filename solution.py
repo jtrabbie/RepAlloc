@@ -72,7 +72,7 @@ class Solution:
         self.overall_data['num_reps'] = len(repeater_nodes_chosen)
         opt_obj_val = round(self.formulation.cplex.solution.get_objective_value(), 5)
         if opt_obj_val - len(repeater_nodes_chosen) > 1:
-            print("WARNING: value of alpha too large, influenced objective function! Optimal objective value: {},"
+            print("WARNING: value of alpha too large, influenced objective function! Optimal objective value: {}, "
                   "number of repeaters: {}".format(opt_obj_val, len(repeater_nodes_chosen)))
         self.overall_data['opt_obj_val'] = opt_obj_val
         return x_variables_chosen, repeater_nodes_chosen
@@ -91,7 +91,7 @@ class Solution:
                     for u in r_up:
                         repeater_node_degree[u] += 1
                         if u not in self.repeater_nodes_chosen:
-                            print("Warning! r_ip = {} but corresponding y_i is not 1 (this should never happen)")
+                            print("Warning! r_up = {} but corresponding y_i is not 1 (this should never happen)")
                     paths.append(path_properties[k][1])
                     num_el = (len(r_up) + 1)
                     num_el_used.append(num_el)
@@ -208,8 +208,8 @@ class Solution:
         return self.parameters
 
     def get_solution_data(self):
-        if "min_node_connectivity" not in self.overall_data.keys():
-            min_node_connectivity, avg_node_connectivity = self.compute_node_connectivy()
+        if "min_node_connectivity" not in self.overall_data.keys() and 'optimal' in self.get_status_string():
+            min_node_connectivity, avg_node_connectivity = self.compute_node_connectivity()
             min_edge_connectivity, avg_edge_connectivity = self.compute_edge_connectivity()
             self.overall_data.update({"min_node_connectivity": min_node_connectivity,
                                       "avg_node_connectivity": avg_node_connectivity,
@@ -222,12 +222,12 @@ class Solution:
 
     def print_path_data(self):
         for k in range(self.formulation.K):
-            for key in self.path_data:
-                print("k = {}, q = {}: path = {}, num_el = {}, reps = {}, path_cost = {}".format(k + 1, key,
-                      self.path_data[key]['paths'][k],
-                      self.path_data[key]['num_el_used'][k],
-                      self.path_data[key]['repeater_nodes_used'][k],
-                      self.path_data[key]['path_cost'][k]))
+            for q in self.path_data:
+                print("k = {}, q = {}: path = {}, num_el = {}, reps = {}, path_cost = {}".format(k + 1, q,
+                      self.path_data[q]['paths'][k],
+                      self.path_data[q]['num_el_used'][k],
+                      self.path_data[q]['repeater_nodes_used'][k],
+                      self.path_data[q]['path_cost'][k]))
 
     def draw_virtual_solution_graph(self):
         pos = nx.get_node_attributes(self.virtual_solution_graph, 'pos')
@@ -248,7 +248,6 @@ class Solution:
                                                linewidths=3)
             rep_nodes.set_edgecolor('k')
         # Finally draw the elementary links
-        print(self.used_elementary_links)
         nx.draw_networkx_edges(G=self.virtual_solution_graph, pos=pos, edgelist=self.used_elementary_links, width=8)
         # Draw all the node labels
         labels = {node: node if node in self.formulation.graph_container.end_nodes else ""
@@ -319,7 +318,7 @@ class Solution:
         fig.tight_layout()
         plt.show()
 
-    def compute_node_connectivy(self):
+    def compute_node_connectivity(self):
         connectivity_dict = nx.all_pairs_node_connectivity(self.virtual_solution_graph,
                                                            self.formulation.graph_container.end_nodes)
         min_connectivity = 1e20
