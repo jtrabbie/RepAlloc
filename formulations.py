@@ -66,21 +66,21 @@ class Formulation:
         # Variable map for linking an abstract CPLEX variable to an actual path or elementary link
         self.varmap = {}
         # Create new CPLEX problem and set the mip tolerance
-        self.prob = cplex.Cplex()
+        self.cplex = cplex.Cplex()
         # Default value is 1e-4, but in `graph_tools._compute_dist_cartesian' the costs are rounded to 5 decimals, so
         # set tolerance to 1e-6.
-        self.prob.parameters.mip.tolerances.mipgap.set(1e-6)
+        self.cplex.parameters.mip.tolerances.mipgap.set(1e-6)
         # Suppress output of CPLEX (comment to receive output statistics)
-        self.prob.set_log_stream(None)
+        self.cplex.set_log_stream(None)
         # self.prob.set_error_stream(None)
         # self.prob.set_warning_stream(None)
-        self.prob.set_results_stream(None)
+        self.cplex.set_results_stream(None)
         if read_from_file:
             # Read from file (use this when ILP takes very long to construct)
-            self.prob.read("colt_with_QIA_cities.lp")
+            self.cplex.read("colt_with_QIA_cities.lp")
         else:
             # Set objective sense to minimization
-            self.prob.objective.set_sense(self.prob.objective.sense.minimize)
+            self.cplex.objective.set_sense(self.cplex.objective.sense.minimize)
             # Time and add constraints and variables
             start_time = time.time()
             self._add_constraints()
@@ -120,15 +120,15 @@ class Formulation:
 
     def solve(self):
         """Solve the formulation and return the Solution object as well as the computation time."""
-        starttime = self.prob.get_time()
-        self.prob.solve()
-        comp_time = self.prob.get_time() - starttime
+        starttime = self.cplex.get_time()
+        self.cplex.solve()
+        comp_time = self.cplex.get_time() - starttime
         sol = Solution(self)
         return sol, comp_time
 
     def clear(self):
         """Clear the reference to the CPLEX object to free up memory when creating multiple formulations."""
-        self.prob.end()
+        self.cplex.end()
 
 
 class LinkBasedFormulation(Formulation):
@@ -146,7 +146,7 @@ class LinkBasedFormulation(Formulation):
         """Add all the constraints of the link-based formulation. Note that the constraint that uses L_max is
         incorporated in `self._add_variables`. TODO: add paper reference to constraint."""
         # Use some local references for shorter notation
-        prob = self.prob
+        prob = self.cplex
         rep_nodes = self.graph_container.possible_rep_nodes
         num_repeater_nodes = self.graph_container.num_repeater_nodes
         # Constraints for linking the x and y variables
@@ -190,8 +190,8 @@ class LinkBasedFormulation(Formulation):
         # Node that if we want to add 6 variables, we need to have 6 separate SparsePairs
         link_constr_column = []
         [link_constr_column.extend([cplex.SparsePair(ind=['LinkXYCon_' + i], val=[-self.D])]) for i in rep_nodes]
-        self.prob.variables.add(obj=[1.0] * len(rep_nodes), names=var_names, ub=[1.0] * len(rep_nodes),
-                                types=['B'] * len(rep_nodes), columns=link_constr_column)
+        self.cplex.variables.add(obj=[1.0] * len(rep_nodes), names=var_names, ub=[1.0] * len(rep_nodes),
+                                 types=['B'] * len(rep_nodes), columns=link_constr_column)
         # Start with finding shortest paths once and store them in a dictionary for later use
         shortest_path_dict = {}
         for i in rep_nodes:
@@ -217,7 +217,7 @@ class LinkBasedFormulation(Formulation):
                         # Exclude elementary links of which the length exceeds L_max, which replaces the L_max
                         # constraint of the formulation
                         if path_cost <= self.L_max:
-                            for k in range(self.K):
+                            for k in range(1, self.K + 1):
                                 # Select correct constraints for this elementary links variable
                                 if i == q[0]:  # Node i is the source
                                     if j == q[1]:  # Node j is the sink
@@ -244,10 +244,10 @@ class LinkBasedFormulation(Formulation):
                                                                         'DisLinkCon' + pairname + '_' + j,
                                                                         'LinkXYCon_' + j],
                                                                    val=[1.0, -1.0, 1.0, 1.0, 1.0])]
-                                # Add x_{ij}^{q,K} variables
-                                cplex_var = self.prob.variables.add(obj=[self.alpha * path_cost], ub=[1],
-                                                                    columns=column, types=['B'],
-                                                                    names=["x" + pairname + "_" + str(i) + "," + str(j)
+                                # Add x_{ij}^{q,k} variables
+                                cplex_var = self.cplex.variables.add(obj=[self.alpha * path_cost], ub=[1],
+                                                                     columns=column, types=['B'],
+                                                                     names=["x" + pairname + "_" + str(i) + "," + str(j)
                                                                            + '#' + str(k)])
                                 # Add it to our variable map for future reference
                                 self.varmap[cplex_var[0]] = (q, sp, path_cost)
@@ -275,20 +275,20 @@ class PathBasedFormulation(Formulation):
         # Constraints for connecting each pair exactly K times. Note that this differs from the formulation in the paper
         # because it is easier to implement this compared to defining all the sets P_q for all q in Q.
         pair_con_names = ['PairCon' + "(" + q[0] + "," + q[1] + ")" for q in self.graph_container.unique_end_node_pairs]
-        self.prob.linear_constraints.add(rhs=[float(self.K)] * self.graph_container.num_unique_pairs,
-                                         senses=['E'] * self.graph_container.num_unique_pairs, names=pair_con_names)
+        self.cplex.linear_constraints.add(rhs=[float(self.K)] * self.graph_container.num_unique_pairs,
+                                          senses=['E'] * self.graph_container.num_unique_pairs, names=pair_con_names)
         # Constraints for linking path variables to repeater variables
         link_con_names = ['LinkCon_' + s for s in self.graph_container.possible_rep_nodes]
-        self.prob.linear_constraints.add(rhs=[0] * num_repeater_nodes,
-                                         senses=['L'] * num_repeater_nodes, names=link_con_names)
+        self.cplex.linear_constraints.add(rhs=[0] * num_repeater_nodes,
+                                          senses=['L'] * num_repeater_nodes, names=link_con_names)
         # Constraints for disjoint elementary link paths
         disjoint_con_names = []
         for q in self.graph_container.unique_end_node_pairs:
             pairname = "(" + q[0] + "," + q[1] + ")"
             for u in self.graph_container.possible_rep_nodes + [q[0]]:
                 disjoint_con_names.append('NodeDisjointCon' + pairname + '_' + u)
-        self.prob.linear_constraints.add(rhs=[1] * len(disjoint_con_names), senses=['L'] * len(disjoint_con_names),
-                                         names=disjoint_con_names)
+        self.cplex.linear_constraints.add(rhs=[1] * len(disjoint_con_names), senses=['L'] * len(disjoint_con_names),
+                                          names=disjoint_con_names)
         # Add repeater variables with a column in the linking constraint. Note that we actually implement
         # sum_{p in P} r_up x_p - D y_u <= 0 since all decision variables must be on the left-hand side for CPLEX.
         var_names = ['y_' + s for s in self.graph_container.possible_rep_nodes]
@@ -297,8 +297,8 @@ class PathBasedFormulation(Formulation):
         [link_constr_column.extend([cplex.SparsePair(ind=['LinkCon_' + i],
                                                      val=[-self.D])]) for i in self.graph_container.possible_rep_nodes]
         # Note that these variables have a lower bound of 0 by default
-        self.prob.variables.add(obj=[1] * num_repeater_nodes, names=var_names, ub=[1] * num_repeater_nodes,
-                                types=['B'] * num_repeater_nodes, columns=link_constr_column)
+        self.cplex.variables.add(obj=[1] * num_repeater_nodes, names=var_names, ub=[1] * num_repeater_nodes,
+                                 types=['B'] * num_repeater_nodes, columns=link_constr_column)
 
     def _add_variables(self):
         """Generate all possible feasible paths that adhere to the L_max and N_max constraints and link them to the
@@ -317,8 +317,8 @@ class PathBasedFormulation(Formulation):
                 indices = ['PairCon' + pairname] + ['LinkCon_' + i for i in r_up] + \
                           ['NodeDisjointCon' + pairname + '_' + i for i in r_up]
                 column_contributions = [cplex.SparsePair(ind=indices, val=[1.0] * len(indices))]
-                cplex_var = self.prob.variables.add(obj=[self.alpha * full_path_cost], ub=[1.0], types=['B'],
-                                                    columns=column_contributions)
+                cplex_var = self.cplex.variables.add(obj=[self.alpha * full_path_cost], ub=[1.0], types=['B'],
+                                                     columns=column_contributions)
                 # Add it to our variable map for future reference
                 self.varmap[cplex_var[0]] = (q, full_path, r_up, full_path_cost)
 

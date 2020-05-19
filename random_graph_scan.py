@@ -7,6 +7,7 @@ import pickle
 import networkx as nx
 from copy import deepcopy
 import time
+import pandas as pd
 
 
 class RandomGraphScan:
@@ -30,7 +31,7 @@ class RandomGraphScan:
         Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
     alpha : float
         Small number used to set secondary objective.
-    L_max : int  # TODO: why can't this be a float?
+    L_max : float
         Maximum elementary-link length.
     R_max : int
         Maximum number of repeaters on path.
@@ -226,7 +227,7 @@ def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius
         Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
     alpha : float
         Small number used to set secondary objective.
-    L_max : int
+    L_max : float
         Maximum elementary-link length.
     R_max : int
         Maximum number of repeaters on path.
@@ -271,7 +272,7 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, N_max,
         Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
     alpha : float
         Small number used to set secondary objective.
-    L_max : int  # TODO: why can't this be a float?
+    L_max : float
         Maximum elementary-link length.
     N_max : int
         Maximum number of repeaters on path.
@@ -321,7 +322,7 @@ def generate_feasible_graph(num_nodes, radius, alpha, L_max, N_max, D, K):
          Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
      alpha : float
          Small number used to set secondary objective.
-     L_max : int  # TODO: why can't this be a float?
+     L_max : float
          Maximum elementary-link length.
      N_max : int
          Maximum number of repeaters on path.
@@ -353,6 +354,7 @@ def generate_feasible_graph(num_nodes, radius, alpha, L_max, N_max, D, K):
         solution, computation_time = prog.solve()
         if 'infeasible' not in solution.get_status_string():
             break
+        prog.clear() # Clear the reference to the cplex object
     return graph_container, solution, computation_time
 
 
@@ -365,7 +367,7 @@ def solve_graphs(graph_containers, alpha, L_max, N_max, D, K):
         Contains graph container objects.
     alpha : float
         Small number used to set secondary objective.
-    L_max : int  # TODO: why can't this be a float?
+    L_max : float
         Maximum elementary-link length.
     N_max : int
         Maximum number of repeaters on path.
@@ -394,8 +396,5 @@ def solve_graphs(graph_containers, alpha, L_max, N_max, D, K):
 
 if __name__ == "__main__":
 
-
     computation_time_vs_number_of_nodes(n_min=30, n_max=50, n_step=10, num_graphs=10, radius=0.9, L_max=1, R_max=6,
                                         D=1000, k=1, alpha=0)
-
-
