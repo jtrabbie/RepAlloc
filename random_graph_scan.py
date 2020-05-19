@@ -1,4 +1,4 @@
-from programs import NodeDisjointLinkBasedProgram
+from formulations import LinkBasedFormulation
 from graph_tools import GraphContainer, create_graph_and_partition
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,6 +7,7 @@ import pickle
 import networkx as nx
 from copy import deepcopy
 import time
+import pandas as pd
 
 
 class RandomGraphScan:
@@ -254,8 +255,8 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
         if not nx.is_connected(graph):
             continue
         graph_container = GraphContainer(graph)
-        prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
-                                            R_max=R_max)
+        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=k, alpha=alpha, L_max=L_max,
+                                    N_max=R_max)
         solution, _ = prog.solve()
         if 'infeasible' in solution.get_status_string():
             continue
@@ -291,8 +292,8 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
     """
     solutions = []
     for graph_container in graph_containers:
-        prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
-                                            R_max=R_max)
+        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=k, alpha=alpha, L_max=L_max,
+                                    N_max=R_max)
         solution, _ = prog.solve()
         if 'infeasible' in solution.get_status_string():
             raise ValueError("Not all graphs allow for a solution of the repeater allocation problem for the"
@@ -303,30 +304,48 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
 
 if __name__ == "__main__":
 
-     # results = RandomGraphScan(scan_param_name="L_max",
-     #           scan_param_min=0.5,
-     #           scan_param_max=1.2,
-     #           scan_param_step=.1,
-     #           num_graphs=50,
-     #           num_nodes=25,
-     #           radius=0.9,
-     #           alpha=1 / 250,
-     #           L_max=1,
-     #           R_max=6,
-     #           D=8,
-     #           k=2)
-     # results.solve()
-     # results.save("results.p")
-     filename = "effect_of_k.p"
-     results = pickle.load(open(filename, "rb"))
-     # print(results.num_graphs)
-     for _ in range(1):
-     # plot_num_repeaters(effect_of_Lmax)
-        results.add_graphs(50)
-        results.solve()
-        results.save(filename)
-        #plot_random_graph_scan(random_graph_scan=effect_of_Lmax,
-        #                       quantity="min_node_connectivity",
-        #                       ylabel="Average Node Connectivity")
-        print(results.computation_time)
-
+    res = pickle.load(open("k_1_6_D_4_v2.p", "rb"))
+    print(res.num_nodes, res.L_max, res.R_max, res.D, res.k, res.scan_param_name, res.radius)
+    first_key = list(res.solutions_data.keys())[0]
+    num_data_points = len(res.solutions_data[first_key])
+    print(res.computation_time / (num_data_points * len(list(res.solutions_data.keys()))))
+    print("num data points:", num_data_points)
+    for key in res.solutions_data.keys():
+        num_reps = []
+        min_node_con = []
+        for i in range(num_data_points):
+            # print(res.solutions_data[key][i]['num_reps'])
+            num_reps.append(res.solutions_data[key][i]['num_reps'])
+            min_node_con.append(res.solutions_data[key][i]['min_node_connectivity'])
+        print("{} = {}, avg_n_reps = {}, std_n_reps = {}, avg_mnc = {}, std_mnc = {}".format(res.scan_param_name, key,
+                                                                                             np.mean(num_reps),
+                                                                                             np.std(num_reps),
+                                                                                             np.mean(min_node_con),
+                                                                                             np.std(min_node_con)))
+    # pd.DataFrame(res.solutions_data).to_csv("effect_of_D.csv", sep="\t", index=False)
+    # results = RandomGraphScan(scan_param_name="L_max",
+    #           scan_param_min=0.5,
+    #           scan_param_max=1.2,
+    #           scan_param_step=.1,
+    #           num_graphs=50,
+    #           num_nodes=25,
+    #           radius=0.9,
+    #           alpha=1 / 250,
+    #           L_max=1,
+    #           R_max=6,
+    #           D=8,
+    #           k=2)
+    # results.solve()
+    # results.save("results.p")
+    # filename = "effect_of_k.p"
+    # results = pickle.load(open(filename, "rb"))
+    # # print(results.num_graphs)
+    # for _ in range(1):
+    # # plot_num_repeaters(effect_of_Lmax)
+    #    results.add_graphs(50)
+    #    results.solve()
+    #    results.save(filename)
+    #    #plot_random_graph_scan(random_graph_scan=effect_of_Lmax,
+    #    #                       quantity="min_node_connectivity",
+    #    #                       ylabel="Average Node Connectivity")
+    #    print(results.computation_time)
