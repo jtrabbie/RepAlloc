@@ -1,4 +1,4 @@
-from programs import NodeDisjointLinkBasedProgram
+from formulations import LinkBasedFormulation
 from graph_tools import GraphContainer, create_graph_and_partition
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ class RandomGraphScan:
     Parameters
     ----------
     scan_param_name : str
-        Name of parameter that should be scanned over. Can be "L_max", "R_max", "D" or "k".
+        Name of parameter that should be scanned over. Can be "L_max", "N_max", "D" or "K".
     scan_param_min : float
         Minimal value for parameter scan.
     scan_param_max : float
@@ -69,21 +69,21 @@ class RandomGraphScan:
         self.computation_time = 0
         self.all_solved = False
         self.most_restrictive_parameters = {"L_max": L_max,
-                                            "R_max": R_max,
+                                            "N_max": R_max,
                                             "D": D,
-                                            "k": k}
+                                            "K": k}
 
         # set scan parameter to most restrictive value
         if scan_param_name == "L_max":
             self.most_restrictive_parameters["L_max"] = scan_param_min
-        elif scan_param_name == "R_max":
-            self.most_restrictive_parameters["R_max"] = scan_param_min
+        elif scan_param_name == "N_max":
+            self.most_restrictive_parameters["N_max"] = scan_param_min
         elif scan_param_name == "D":
             self.most_restrictive_parameters["D"] = scan_param_min
-        elif scan_param_name == "k":
-            self.most_restrictive_parameters["k"] = scan_param_max
+        elif scan_param_name == "K":
+            self.most_restrictive_parameters["K"] = scan_param_max
         else:
-            raise ValueError("scan_param_name must be either L_max, R_max, D or k. Instead, it is {}."
+            raise ValueError("scan_param_name must be either L_max, N_max, D or K. Instead, it is {}."
                              .format(scan_param_name))
 
         # generate population of graphs which are feasible for most restrictive values
@@ -249,7 +249,7 @@ def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius
         comp_times_fixed_number_of_nodes = []
         for i in range(num_graphs):
             _, _, comp_time = generate_feasible_graph(num_nodes=n, radius=radius, alpha=alpha,
-                                                      L_max=L_max, R_max=R_max, D=D, k=k)
+                                                      L_max=L_max, N_max=R_max, D=D, K=k)
             comp_times_fixed_number_of_nodes.append(comp_time)
             if i % 5 == 0 or i == num_graphs - 1:
                 # save results after every five graphs to minimize lost data
@@ -258,7 +258,7 @@ def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius
                     print(comp_times, file=f)
 
 
-def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max, D, k):
+def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, N_max, D, K):
     """Generate a population of geometric random graphs with feasible solutions for specified parameters.
 
     Parameters
@@ -273,11 +273,11 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
         Small number used to set secondary objective.
     L_max : int  # TODO: why can't this be a float?
         Maximum elementary-link length.
-    R_max : int
+    N_max : int
         Maximum number of repeaters on path.
     D : int
         Quantum-repeater capacity.
-    k : int
+    K : int
         Robustness parameter.
 
     Returns
@@ -300,9 +300,9 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
                                                                               radius=radius,
                                                                               alpha=alpha,
                                                                               L_max=L_max,
-                                                                              R_max=R_max,
+                                                                              N_max=N_max,
                                                                               D=D,
-                                                                              k=k)
+                                                                              K=K)
         graph_containers.append(graph_container)
         solutions.append(solution)
         computation_times.append(computation_time)
@@ -310,7 +310,7 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
     return graph_containers, solutions, computation_times
 
 
-def generate_feasible_graph(num_nodes, radius, alpha, L_max, R_max, D, k):
+def generate_feasible_graph(num_nodes, radius, alpha, L_max, N_max, D, K):
     """Generate a single geometric random graph with a feasible solution for specified parameters.
 
      Parameters
@@ -323,11 +323,11 @@ def generate_feasible_graph(num_nodes, radius, alpha, L_max, R_max, D, k):
          Small number used to set secondary objective.
      L_max : int  # TODO: why can't this be a float?
          Maximum elementary-link length.
-     R_max : int
+     N_max : int
          Maximum number of repeaters on path.
      D : int
          Quantum-repeater capacity.
-     k : int
+     K : int
          Robustness parameter.
 
      Returns
@@ -348,15 +348,15 @@ def generate_feasible_graph(num_nodes, radius, alpha, L_max, R_max, D, k):
         if graph is None or not nx.is_connected(graph):
             continue
         graph_container = GraphContainer(graph)
-        prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
-                                            R_max=R_max)
+        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=K, alpha=alpha, L_max=L_max,
+                                    N_max=N_max)
         solution, computation_time = prog.solve()
         if 'infeasible' not in solution.get_status_string():
             break
     return graph_container, solution, computation_time
 
 
-def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
+def solve_graphs(graph_containers, alpha, L_max, N_max, D, K):
     """Solve repeater allocation problem for a collection of graphs.
 
     Parameters
@@ -367,11 +367,11 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
         Small number used to set secondary objective.
     L_max : int  # TODO: why can't this be a float?
         Maximum elementary-link length.
-    R_max : int
+    N_max : int
         Maximum number of repeaters on path.
     D : int
         Quantum-repeater capacity.
-    k : int
+    K : int
         Robustness parameter.
 
     Returns
@@ -382,8 +382,8 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
     """
     solutions = []
     for graph_container in graph_containers:
-        prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
-                                            R_max=R_max)
+        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=K, alpha=alpha, L_max=L_max,
+                                    N_max=N_max)
         solution, _ = prog.solve()
         if 'infeasible' in solution.get_status_string():
             raise ValueError("Not all graphs allow for a solution of the repeater allocation problem for the"
@@ -394,7 +394,8 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
 
 if __name__ == "__main__":
 
-    computation_time_vs_number_of_nodes(n_min=10, n_max=200, n_step=10, num_graphs=100, radius=0.9, L_max=1, R_max=6,
+
+    computation_time_vs_number_of_nodes(n_min=30, n_max=50, n_step=10, num_graphs=10, radius=0.9, L_max=1, R_max=6,
                                         D=1000, k=1, alpha=0)
 
 

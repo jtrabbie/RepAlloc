@@ -1,5 +1,5 @@
-from programs import EdgeDisjointLinkBasedProgram, EdgeDisjointPathBasedProgram,\
-    NodeDisjointPathBasedProgram, NodeDisjointLinkBasedProgram
+from formulations import EdgeDisjointLinkBasedProgram, EdgeDisjointPathBasedProgram,\
+    PathBasedFormulation, LinkBasedFormulation
 from graph_tools import GraphContainer, create_graph_and_partition, read_graph, create_graph_on_unit_cube
 from solution import Solution
 
@@ -9,7 +9,7 @@ from datetime import datetime
 
 
 def plot_connectivity_and_num_reps(res, xdata, xlabel, L_max, R_max, k, D, n):
-    """Function for plotting the connectivity and number of repeaters for different values of k or D."""
+    """Function for plotting the connectivity and number of repeaters for different values of K or D."""
     # Plotting
     overall_fs = 18
     # Connectivity on left y-axis
@@ -43,12 +43,12 @@ def plot_connectivity_and_num_reps(res, xdata, xlabel, L_max, R_max, k, D, n):
     plot_tuple = (h[0], h[1], h[2])
     plt.legend(plot_tuple, ('Number of Repeaters', 'Minimum Node Connectivity', 'Minimum Edge Connectivity'),
                fontsize=overall_fs, loc='best')
-    if xlabel == 'k':
-        plt.title('n = {}, L_max = {}, R_max = {}, D = {}, num_feas_graphs = {}'.format(n, L_max, R_max, D,
+    if xlabel == 'K':
+        plt.title('n = {}, L_max = {}, N_max = {}, D = {}, num_feas_graphs = {}'.format(n, L_max, R_max, D,
                                                                                         num_graphs),
                   fontsize=overall_fs)
     elif xlabel == 'D':
-        plt.title('n = {}, L_max = {}, R_max = {}, k = {}, num_feas_graphs = {}'.format(n, L_max, R_max, k,
+        plt.title('n = {}, L_max = {}, N_max = {}, K = {}, num_feas_graphs = {}'.format(n, L_max, R_max, k,
                                                                                         num_graphs),
                   fontsize=overall_fs)
     plt.show()
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     """Read the Colt data set (European data) and plot the solution"""
     # G = read_graph('Colt.gml', draw=False)
-    # prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=900, R_max=6, D=1e20, k=1,
+    # prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=900, N_max=6, D=1e20, K=1,
     #                                     alpha=1/75000)
     # sol, comp_time = prog.solve()
     # print("Computation Time:", comp_time)
@@ -68,14 +68,14 @@ if __name__ == "__main__":
 
     """Create a random graph with 4 fixed end nodes on the vertices of a unit cube and 10 repeater nodes."""
     G = create_graph_on_unit_cube(n_repeaters=10, radius=0.5, draw=True, seed=2)
-    prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=0.75, R_max=3, D=30, k=1, alpha=1/100)
+    prog = LinkBasedFormulation(graph_container=GraphContainer(G), L_max=0.75, N_max=3, D=30, K=1, alpha=1 / 100)
     sol, _ = prog.solve()
     # sol.draw_virtual_solution_graph()
     sol.draw_physical_solution_graph()
 
     """Create random graph and use the convex hull to partition the nodes"""
     # G = create_graph_and_partition(num_nodes=25, radius=0.5, seed=130, draw=True)
-    # prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=0.9, R_max=3, D=30, k=1, alpha=1/200)
+    # prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=0.9, N_max=3, D=30, K=1, alpha=1/200)
     # sol, _ = prog.solve()
     # sol.draw_physical_solution_graph()
     # sol.draw_virtual_solution_graph()
@@ -84,19 +84,19 @@ if __name__ == "__main__":
     """Create random instances and compare the solutions of the LBF and PBF"""
     # for _ in range(100):
     #     D = np.random.randint(5, 15)
-    #     k = np.random.randint(1, 5)
+    #     K = np.random.randint(1, 5)
     #     L_max = round(np.random.rand() + 0.5, 5)
-    #     R_max = np.random.randint(1, 4)
+    #     N_max = np.random.randint(1, 4)
     #     n = np.random.randint(15, 25)
     #     seed = np.random.randint(1, 1e5)
     #     alpha = 1 / 250
-    #     print(D, k, L_max, R_max, n, seed)
+    #     print(D, K, L_max, N_max, n, seed)
     #     G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=False, seed=seed)
-    #     prog_LBF = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=L_max, R_max=R_max, D=D, k=k,
+    #     prog_LBF = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), L_max=L_max, N_max=N_max, D=D, K=K,
     #                                             alpha=alpha)
     #     sol_LBF, _ = prog_LBF.solve()
     #     data_LBF = sol_LBF.get_solution_data()
-    #     prog_PBF = NodeDisjointPathBasedProgram(graph_container=GraphContainer(G), L_max=L_max, R_max=R_max, D=D, k=k,
+    #     prog_PBF = NodeDisjointPathBasedProgram(graph_container=GraphContainer(G), L_max=L_max, N_max=N_max, D=D, K=K,
     #                                             alpha=alpha)
     #     sol_PBF, _ = prog_PBF.solve()
     #     data_PBF = sol_PBF.get_solution_data()
@@ -104,8 +104,8 @@ if __name__ == "__main__":
     #         print("LBF and PBF give different solutions!")
     #         print("LBF:", data_LBF)
     #         print("PBF:", data_PBF)
-    #         print("D = {}, k = {}, L_max = {}, R_max = {}, n = {}, seed = {}, alpha = {}"
-    #               .format(D, k, L_max, R_max, n, seed, alpha))
+    #         print("D = {}, K = {}, L_max = {}, N_max = {}, n = {}, seed = {}, alpha = {}"
+    #               .format(D, K, L_max, N_max, n, seed, alpha))
     #         break
     #     else:
     #         print("Same solutions.")
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     # Open a text file with saved data if necessary
     # with open('./data/res_k_2020-02-27_04-03-59.txt', 'r') as f:
     #     res = eval(f.read())
-    # Loop over values of k
+    # Loop over values of K
     max_k = 6
     k_vals = list(range(1, max_k + 1))
     num_suc_max = 50  # Number of feasible graphs we want to extract data from
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     R_max = 5
     D = 8
     alpha = 1 / 250
-    changing_var = 'k'
+    changing_var = 'K'
     res = {}
     save_data = True
     rep_node_degree_data = []
@@ -137,12 +137,12 @@ if __name__ == "__main__":
         num_suc = 0
         while num_suc < num_suc_max:
             G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=False)
-            prog = NodeDisjointLinkBasedProgram(graph_container=GraphContainer(G), D=D, k=k, alpha=alpha, L_max=L_max,
-                                                R_max=R_max)
+            prog = LinkBasedFormulation(graph_container=GraphContainer(G), D=D, K=k, alpha=alpha, L_max=L_max,
+                                        N_max=R_max)
             sol, _ = prog.solve()
             if 'infeasible' in sol.get_status_string():
                 continue
-            print("num_suc = {}, k = {}, D = {}".format(num_suc, k, D))
+            print("num_suc = {}, K = {}, D = {}".format(num_suc, k, D))
             print(sol.get_solution_data())
             rep_node_degree_data.append(sol.get_solution_data()['repeater_node_degree'])
             print(rep_node_degree_data)

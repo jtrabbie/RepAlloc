@@ -26,8 +26,8 @@ class Solution:
             print("Invalid solution status (?): {}".format(sol_status))
         else:
             parameters = {"L_max": self.program.L_max,
-                          "R_max": self.program.R_max,
-                          "k": self.program.k,
+                          "N_max": self.program.R_max,
+                          "K": self.program.k,
                           "D": self.program.D,
                           "alpha": self.program.alpha,
                           }
@@ -211,7 +211,7 @@ class Solution:
     def print_path_data(self):
         for k in range(self.program.k):
             for key in self.path_data:
-                print("k = {}, q = {}: path = {}, num_el = {}, reps = {}, path_cost = {}".format(k, key,
+                print("K = {}, q = {}: path = {}, num_el = {}, reps = {}, path_cost = {}".format(k, key,
                       self.path_data[key]['paths'][k],
                       self.path_data[key]['num_el_used'][k],
                       self.path_data[key]['repeater_nodes_used'][k],
@@ -225,13 +225,13 @@ class Solution:
         end_nodes = nx.draw_networkx_nodes(G=self.virtual_solution_graph, pos=pos, node_size=700,
                                            nodelist=self.program.graph_container.end_nodes,
                                            node_shape='s', node_color=[[1.0, 140 / 255, 0.]], label="End Node")
-        end_nodes.set_edgecolor('k')
+        end_nodes.set_edgecolor('K')
         # Then draw the repeater nodes
         if self.repeater_nodes_chosen:
             rep_nodes = nx.draw_networkx_nodes(G=self.virtual_solution_graph, pos=pos, node_size=700,
                                                nodelist=self.repeater_nodes_chosen,
                                                node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node")
-            rep_nodes.set_edgecolor('k')
+            rep_nodes.set_edgecolor('K')
         # Finally draw the elementary links
         nx.draw_networkx_edges(G=self.virtual_solution_graph, pos=pos, edgelist=self.used_elementary_links, width=3)
         # And draw in the labels of the nodes
@@ -259,23 +259,23 @@ class Solution:
         end_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=700,
                                            nodelist=self.program.graph_container.end_nodes,
                                            node_shape='s', node_color=[[1.0, 140 / 255, 0.]], label="End Node")
-        end_nodes.set_edgecolor('k')
+        end_nodes.set_edgecolor('K')
         # Then draw the repeater nodes
         if self.repeater_nodes_chosen:
             rep_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=700,
                                                nodelist=self.repeater_nodes_chosen, node_color=[[0 / 255, 166 / 255, 214 / 255]],
                                                label="Repeater Node")
-            rep_nodes.set_edgecolor('k')
+            rep_nodes.set_edgecolor('K')
         # Then draw the link-extension nodes
         if self.link_extension_nodes:
             le_nodes = nx.draw_networkx_nodes(G=self.program.graph_container.graph, pos=pos, node_size=700,
                                               nodelist=self.link_extension_nodes, node_color=[[0.83, 0.83, 0.83]],
                                               label="Link Extension", alpha=0.4)
-            le_nodes.set_edgecolor('k')
+            le_nodes.set_edgecolor('K')
         # Draw the used edges
         nx.draw_networkx_edges(G=self.program.graph_container.graph, pos=pos, edgelist=self.used_edges, width=3)
         # Draw the unused edges but less visible
-        nx.draw_networkx_edges(G=self.program.graph_container.graph, pos=pos, edgelist=self.unused_edges, edge_color="k",
+        nx.draw_networkx_edges(G=self.program.graph_container.graph, pos=pos, edgelist=self.unused_edges, edge_color="K",
                                width=1, alpha=0.2)
         # Draw all the node labels
         nx.draw_networkx_labels(G=self.program.graph_container.graph, pos=pos, labels=labels, font_size=17,
