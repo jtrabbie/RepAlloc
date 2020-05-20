@@ -3,6 +3,7 @@ from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 import networkx as nx
 import itertools
+import ast
 
 
 class GraphContainer:
@@ -111,7 +112,11 @@ def read_graph_from_gml(file, draw=False):
     file_name = file[0:-4]
     if file_name == 'Surfnet':
         # The Dutch Topology Zoo dataset
-        end_node_list = ["Vlissingen", "Groningen", "DenHaag", "Maastricht"]
+        end_node_list = ["Middelburg", "Groningen", "Maastricht", "Enschede", "Delft", "Amsterdam", "Utrecht", "Den_Helder"]
+    elif file_name == "SurfnetFiberdata":
+        end_node_list = ["Asd001b", "Mt001a", "GN001A", "DT001A"]
+    elif file_name == "SurfnetCore":
+        end_node_list = ["Amsterdam 1", "Delft 1", "Groningen 1", "Maastricht", "Enschede 2"]
     elif file_name == 'Colt':
         # The European Topology Zoo dataset
         # Use QIA members: IQOQI, UOI (Innsbruck), CNRS (Paris), ICFO (Barcelona), IT (Lisbon),
@@ -124,7 +129,12 @@ def read_graph_from_gml(file, draw=False):
         raise NotImplementedError("Dataset {} not implemented (no city list defined)".format(file_name))
     pos = {}
     for node, nodedata in G.nodes.items():
-        pos[node] = [nodedata['Longitude'], nodedata['Latitude']]
+        if "position" in nodedata:
+            pos[node] = ast.literal_eval(nodedata["position"])
+        elif "Longitude" in nodedata and "Latitude" in nodedata:
+            pos[node] = [nodedata['Longitude'], nodedata['Latitude']]
+        else:
+            raise ValueError("Cannot determine node position.")
         if node in end_node_list:
             nodedata['type'] = 'end_node'
         else:
