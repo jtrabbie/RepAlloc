@@ -359,10 +359,10 @@ def generate_feasible_graph(num_nodes, radius, alpha, L_max, N_max, D, K):
         print("created program")
         solution, computation_time = prog.solve()
         print("obtained solution")
-        prog.clear() # Clear the reference to the cplex object
+        prog.clear()  # Clear the reference to the cplex object
         graph.clear()
-        print("solution feasible: {}".format(solution.feasible))
-        if not solution.feasible:
+        if solution.feasible:
+            print("Feasible!")
             break
     return graph_container, solution, computation_time
 
