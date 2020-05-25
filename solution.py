@@ -8,6 +8,7 @@ class Solution:
     def __init__(self, formulation):
         self.formulation = formulation
         self.parameters, self.overall_data = self._setup_solution()
+        self.feasible = "infeasible" not in self.get_status_string()
         if not self.parameters:
             return
         # self.x_variables_chosen, self.repeater_nodes_chosen = self._interpret_variables()
