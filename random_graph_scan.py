@@ -251,6 +251,7 @@ def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius
             _, _, comp_time = generate_feasible_graph(num_nodes=n, radius=radius, alpha=alpha,
                                                       L_max=L_max, N_max=N_max, D=D, K=K)
             comp_times_fixed_number_of_nodes.append(comp_time)
+            print("now {} feasible graphs found for {} nodes!".format(len(comp_times_fixed_number_of_nodes), n))
             if i % 5 == 0 or i == num_graphs - 1:
                 # save results after every five graphs to minimize lost data
                 comp_times[n] = comp_times_fixed_number_of_nodes
@@ -350,13 +351,18 @@ def generate_feasible_graph(num_nodes, radius, alpha, L_max, N_max, D, K):
         graph = create_graph_and_partition(num_nodes=num_nodes, radius=radius, draw=False)
         if graph is None or not nx.is_connected(graph):
             continue
+        print("created graph")
         graph_container = GraphContainer(graph)
+        print("created graph container")
         prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=K, alpha=alpha, L_max=L_max,
                                     N_max=N_max)
+        print("created program")
         solution, computation_time = prog.solve()
+        print("obtained solution")
+        prog.clear() # Clear the reference to the cplex object
+        graph.clear()
         if 'infeasible' not in solution.get_status_string():
             break
-        prog.clear() # Clear the reference to the cplex object
     return graph_container, solution, computation_time
 
 
@@ -398,5 +404,5 @@ def solve_graphs(graph_containers, alpha, L_max, N_max, D, K):
 
 if __name__ == "__main__":
 
-    computation_time_vs_number_of_nodes(n_min=30, n_max=50, n_step=10, num_graphs=10, radius=0.9, L_max=1, N_max=6,
-                                        D=1000, K=1, alpha=0)
+    computation_time_vs_number_of_nodes(n_min=20, n_max=200, n_step=10, num_graphs=10, radius=0.9, L_max=0.9, N_max=6,
+                                                                                        D=4, K=6, alpha=0)

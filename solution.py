@@ -10,9 +10,9 @@ class Solution:
         self.parameters, self.overall_data = self._setup_solution()
         if not self.parameters:
             return
-        self.x_variables_chosen, self.repeater_nodes_chosen = self._interpret_variables()
-        self.path_data = self._process_x_variables()
-        self._create_virtual_solution_graph()
+        # self.x_variables_chosen, self.repeater_nodes_chosen = self._interpret_variables()
+        # self.path_data = self._process_x_variables()
+        # self._create_virtual_solution_graph()
 
     def _setup_solution(self):
         """Parse the solution of the formulation."""
