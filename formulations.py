@@ -107,7 +107,7 @@ class Formulation:
                                  "or equal to {}".format(end_node, L_max))
 
     def _compute_expected_number_of_variables(self) -> int:
-        """Compute the expected number of variables for L_max -> infty and R_max -> |R| + 1."""
+        """Compute the expected number of variables for L_max -> infty and N_max -> |R| + 1."""
         pass
 
     def _add_constraints(self):
@@ -129,6 +129,7 @@ class Formulation:
     def clear(self):
         """Clear the reference to the CPLEX object to free up memory when creating multiple formulations."""
         self.cplex.end()
+        self.varmap = {}
 
 
 class LinkBasedFormulation(Formulation):
@@ -184,7 +185,7 @@ class LinkBasedFormulation(Formulation):
         graph = self.graph_container.graph
         rep_nodes = self.graph_container.possible_rep_nodes
         # Add y_i variables with a column only in the x-y linking constraints and the objective function. Note that
-        # we actually implement sum_{q in Q} sum_{v: (u, v) in E_q} sum_{k = 1}^K x_{uv}^{q,k} - D y_u <= 0 since
+        # we actually implement sum_{q in Q} sum_{v: (u, v) in E_q} sum_{K = 1}^K x_{uv}^{q,K} - D y_u <= 0 since
         # all decision variables must be on the left-hand side for CPLEX.
         var_names = ['y_' + i for i in rep_nodes]
         # Node that if we want to add 6 variables, we need to have 6 separate SparsePairs
@@ -244,7 +245,7 @@ class LinkBasedFormulation(Formulation):
                                                                         'DisLinkCon' + pairname + '_' + j,
                                                                         'LinkXYCon_' + j],
                                                                    val=[1.0, -1.0, 1.0, 1.0, 1.0])]
-                                # Add x_{ij}^{q,k} variables
+                                # Add x_{ij}^{q,K} variables
                                 cplex_var = self.cplex.variables.add(obj=[self.alpha * path_cost], ub=[1],
                                                                      columns=column, types=['B'],
                                                                      names=["x" + pairname + "_" + str(i) + "," + str(j)

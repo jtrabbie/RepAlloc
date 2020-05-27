@@ -8,6 +8,7 @@ class Solution:
     def __init__(self, formulation):
         self.formulation = formulation
         self.parameters, self.overall_data = self._setup_solution()
+        self.feasible = "infeasible" not in self.get_status_string()
         if not self.parameters:
             return
         self.x_variables_chosen, self.repeater_nodes_chosen = self._interpret_variables()
@@ -223,7 +224,7 @@ class Solution:
     def print_path_data(self):
         for k in range(self.formulation.K):
             for q in self.path_data:
-                print("k = {}, q = {}: path = {}, num_el = {}, reps = {}, path_cost = {}".format(k + 1, q,
+                print("K = {}, q = {}: path = {}, num_el = {}, reps = {}, path_cost = {}".format(k + 1, q,
                       self.path_data[q]['paths'][k],
                       self.path_data[q]['num_el_used'][k],
                       self.path_data[q]['repeater_nodes_used'][k],
@@ -239,14 +240,14 @@ class Solution:
                                            node_shape='s', node_color=[[255 / 255, 120 / 255, 0 / 255]],
                                            label="End Node",
                                            linewidths=3)
-        end_nodes.set_edgecolor('k')
+        end_nodes.set_edgecolor('K')
         # Then draw the repeater nodes
         if self.repeater_nodes_chosen:
             rep_nodes = nx.draw_networkx_nodes(G=self.virtual_solution_graph, pos=pos, node_size=1500,
                                                node_shape='h', nodelist=self.repeater_nodes_chosen,
                                                node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node",
                                                linewidths=3)
-            rep_nodes.set_edgecolor('k')
+            rep_nodes.set_edgecolor('K')
         # Finally draw the elementary links
         nx.draw_networkx_edges(G=self.virtual_solution_graph, pos=pos, edgelist=self.used_elementary_links, width=8)
         # Draw all the node labels
@@ -267,7 +268,6 @@ class Solution:
         pos = nx.get_node_attributes(self.formulation.graph_container.graph, 'pos')
         labels = {}
         for node, nodedata in self.formulation.graph_container.graph.nodes.items():
-            # labels[node] = node
             if node in self.formulation.graph_container.end_nodes:
                 labels[node] = node
             else:
@@ -307,7 +307,7 @@ class Solution:
                                edge_color=[[170 / 255, 170 / 255, 170 / 255]], width=1)
         # Draw the used edges
         nx.draw_networkx_edges(G=self.formulation.graph_container.graph, pos=pos, edgelist=self.used_edges, width=8,
-                               edge_color=[[0 / 255, 166 / 255, 214 / 255]])
+                               edge_color=[[0 / 255, 0 / 255, 0 / 255]])
         # Draw all the node labels
         # label_pos = {city: [pos[city][0], pos[city][1] - 0.07] for city in pos}
         # nx.draw_networkx_labels(G=self.program.graph_container.graph, pos=label_pos, labels=labels, font_size=11,

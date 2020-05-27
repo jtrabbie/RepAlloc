@@ -7,7 +7,6 @@ import pickle
 import networkx as nx
 from copy import deepcopy
 import time
-import pandas as pd
 
 
 class RandomGraphScan:
@@ -16,7 +15,7 @@ class RandomGraphScan:
     Parameters
     ----------
     scan_param_name : str
-        Name of parameter that should be scanned over. Can be "L_max", "R_max", "D" or "k".
+        Name of parameter that should be scanned over. Can be "L_max", "N_max", "D" or "K".
     scan_param_min : float
         Minimal value for parameter scan.
     scan_param_max : float
@@ -31,13 +30,13 @@ class RandomGraphScan:
         Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
     alpha : float
         Small number used to set secondary objective.
-    L_max : int  # TODO: why can't this be a float?
+    L_max : float
         Maximum elementary-link length.
-    R_max : int
+    N_max : int
         Maximum number of repeaters on path.
     D : int
         Quantum-repeater capacity.
-    k : int
+    K : int
         Robustness parameter.
 
     Notes
@@ -47,7 +46,7 @@ class RandomGraphScan:
     """
 
     def __init__(self, scan_param_name, scan_param_min, scan_param_max, scan_param_step,
-                 num_graphs, num_nodes, radius, alpha, L_max, R_max, D, k):
+                 num_graphs, num_nodes, radius, alpha, L_max, N_max, D, K):
 
         self.scan_param_name = scan_param_name
         self.scan_param_min = scan_param_min
@@ -61,29 +60,29 @@ class RandomGraphScan:
         self.num_nodes = num_nodes
         self.radius = radius
         self.L_max = L_max
-        self.R_max = R_max
+        self.N_max = N_max
         self.D = D
-        self.k = k
+        self.K = K
         self.alpha = alpha
         self.graphs = []
         self.solutions_data = {}
         self.computation_time = 0
         self.most_restrictive_parameters = {"L_max": L_max,
-                                            "R_max": R_max,
+                                            "N_max": N_max,
                                             "D": D,
-                                            "k": k}
+                                            "K": K}
 
         # set scan parameter to most restrictive value
         if scan_param_name == "L_max":
             self.most_restrictive_parameters["L_max"] = scan_param_min
-        elif scan_param_name == "R_max":
-            self.most_restrictive_parameters["R_max"] = scan_param_min
+        elif scan_param_name == "N_max":
+            self.most_restrictive_parameters["N_max"] = scan_param_min
         elif scan_param_name == "D":
             self.most_restrictive_parameters["D"] = scan_param_min
-        elif scan_param_name == "k":
-            self.most_restrictive_parameters["k"] = scan_param_max
+        elif scan_param_name == "K":
+            self.most_restrictive_parameters["K"] = scan_param_max
         else:
-            raise ValueError("scan_param_name must be either L_max, R_max, D or k. Instead, it is {}."
+            raise ValueError("scan_param_name must be either L_max, N_max, D or K. Instead, it is {}."
                              .format(scan_param_name))
 
         # generate population of graphs which are feasible for most restrictive values
@@ -107,11 +106,11 @@ class RandomGraphScan:
         print("adding {} graphs".format(num_extra_graphs))
         # self.num_graphs += num_extra_graphs
         start_time = time.time()
-        new_graphs, new_solutions = generate_feasible_graphs(num_graphs=num_extra_graphs,
-                                                             num_nodes=self.num_nodes,
-                                                             radius=self.radius,
-                                                             alpha=self.alpha,
-                                                             **self.most_restrictive_parameters)
+        new_graphs, new_solutions, _ = generate_feasible_graphs(num_graphs=num_extra_graphs,
+                                                                num_nodes=self.num_nodes,
+                                                                radius=self.radius,
+                                                                alpha=self.alpha,
+                                                                **self.most_restrictive_parameters)
         self.graphs += new_graphs
         new_solutions_data = [solution.get_solution_data() for solution in new_solutions]
         if self.most_restrictive_parameters[self.scan_param_name] in self.solutions_data.keys():
@@ -242,7 +241,57 @@ def plot_random_graph_scan(random_graph_scan, quantity, ylabel):
     plt.show()
 
 
-def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max, D, k):
+def computation_time_vs_number_of_nodes(n_min, n_max, n_step, num_graphs, radius, alpha, L_max, N_max, D, K):
+    """Determine computation time as a function of the number of nodes in a random geometric graph.
+
+    Parameters
+    ----------
+    n_min : int
+        Smallest number of nodes in scan over number of nodes.
+    n_max : int
+        Largest number of nodes in scan over number of nodes.
+    n_step : int
+        Stepsize of scan over number of nodes.
+    num_graphs : int
+        Number of feasible graphs required per value of the number of nodes.
+    radius : float
+        Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
+    alpha : float
+        Small number used to set secondary objective.
+    L_max : float
+        Maximum elementary-link length.
+    N_max : int
+        Maximum number of repeaters on path.
+    D : int
+        Quantum-repeater capacity.
+    K : int
+        Robustness parameter.
+
+    Notes
+    -----
+    Dictionary with number of nodes as keys and lists fo computation times (of length num_graphs) as values is
+    saved in the current folder.
+
+    """
+
+    comp_times = {}
+    now = str(datetime.now())[0:-7].replace(" ", "_").replace(":", "-")
+    for n in range(n_min, n_max + 1, n_step):
+        print("number of nodes = {}".format(n))
+        comp_times_fixed_number_of_nodes = []
+        for i in range(num_graphs):
+            _, _, comp_time = generate_feasible_graph(num_nodes=n, radius=radius, alpha=alpha,
+                                                      L_max=L_max, N_max=N_max, D=D, K=K)
+            comp_times_fixed_number_of_nodes.append(comp_time)
+            print("now {} feasible graphs found for {} nodes!".format(len(comp_times_fixed_number_of_nodes), n))
+            if i % 5 == 0 or i == num_graphs - 1:
+                # save results after every five graphs to minimize lost data
+                comp_times[n] = comp_times_fixed_number_of_nodes
+                with open('./comp_times_{}.txt'.format(now), 'w') as f:
+                    print(comp_times, file=f)
+
+
+def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, N_max, D, K):
     """Generate a population of geometric random graphs with feasible solutions for specified parameters.
 
     Parameters
@@ -255,13 +304,13 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
         Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
     alpha : float
         Small number used to set secondary objective.
-    L_max : int  # TODO: why can't this be a float?
+    L_max : float
         Maximum elementary-link length.
-    R_max : int
+    N_max : int
         Maximum number of repeaters on path.
     D : int
         Quantum-repeater capacity.
-    k : int
+    K : int
         Robustness parameter.
 
     Returns
@@ -270,35 +319,87 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
         Contains number_of_graphs graph container objects.
     solutions : list
         Contains number_of_graphs solutions. solutions[i] corresponds to graph_containers[i].
+    computation_times : list
+        Contains number_of_graphs computation times.
+        computation_times[i] is the amount of seconds it took to find the feasible graph graph_container[i].
 
     """
 
-    graph_containers, solutions = [], []
+    graph_containers, solutions, computation_times = [], [], []
     number_of_found_graphs = 0
     number_of_tries = 0
     while number_of_found_graphs < num_graphs:
         number_of_tries += 1
         if number_of_tries == 10000 and number_of_found_graphs == 0:
             raise RuntimeError("Could not find a feasible graph in 100 tries.")
-        graph = create_graph_and_partition(num_nodes=num_nodes, radius=radius, draw=False)
-        if graph is None:
-            print("generated graph is None")  # TODO: why does this sometimes happen?
-            continue
-        if not nx.is_connected(graph):
-            continue
-        graph_container = GraphContainer(graph)
-        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=k, alpha=alpha, L_max=L_max,
-                                    N_max=R_max)
-        solution, _ = prog.solve()
-        if 'infeasible' in solution.get_status_string():
-            continue
+        graph_container, solution, computation_time = generate_feasible_graph(num_nodes=num_nodes,
+                                                                              radius=radius,
+                                                                              alpha=alpha,
+                                                                              L_max=L_max,
+                                                                              N_max=N_max,
+                                                                              D=D,
+                                                                              K=K)
         graph_containers.append(graph_container)
         solutions.append(solution)
+        computation_times.append(computation_time)
         number_of_found_graphs += 1
-    return graph_containers, solutions
+    return graph_containers, solutions, computation_times
 
 
-def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
+def generate_feasible_graph(num_nodes, radius, alpha, L_max, N_max, D, K):
+    """Generate a single geometric random graph with a feasible solution for specified parameters.
+
+     Parameters
+     ----------
+     num_nodes : int
+         Total number of nodes in each random graph.
+     radius : float
+         Radius of random geometric graphs (all nodes within this distance of one another are connected by an edge).
+     alpha : float
+         Small number used to set secondary objective.
+     L_max : float
+         Maximum elementary-link length.
+     N_max : int
+         Maximum number of repeaters on path.
+     D : int
+         Quantum-repeater capacity.
+     K : int
+         Robustness parameter.
+
+     Returns
+     -------
+     graph_container : list
+         Contains number_of_graphs graph container objects.
+     solution : list
+         Contains number_of_graphs solutions. solutions[i] corresponds to graph_containers[i].
+     computation_time : float
+         Number of seconds required to find the graph.
+
+     """
+    graph_container = None
+    solution = None
+    computation_time = None
+    while True:
+        graph = create_graph_and_partition(num_nodes=num_nodes, radius=radius, draw=False)
+        if graph is None or not nx.is_connected(graph):
+            continue
+        print("created graph")
+        graph_container = GraphContainer(graph)
+        print("created graph container")
+        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=K, alpha=alpha, L_max=L_max,
+                                    N_max=N_max)
+        print("created program")
+        solution, computation_time = prog.solve()
+        print("obtained solution")
+        prog.clear()  # Clear the reference to the cplex object
+        graph.clear()
+        if solution.feasible:
+            print("Feasible!")
+            break
+    return graph_container, solution, computation_time
+
+
+def solve_graphs(graph_containers, alpha, L_max, N_max, D, K):
     """Solve repeater allocation problem for a collection of graphs.
 
     Parameters
@@ -307,13 +408,13 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
         Contains graph container objects.
     alpha : float
         Small number used to set secondary objective.
-    L_max : int  # TODO: why can't this be a float?
+    L_max : float
         Maximum elementary-link length.
-    R_max : int
+    N_max : int
         Maximum number of repeaters on path.
     D : int
         Quantum-repeater capacity.
-    k : int
+    K : int
         Robustness parameter.
 
     Returns
@@ -324,8 +425,8 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
     """
     solutions = []
     for graph_container in graph_containers:
-        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=k, alpha=alpha, L_max=L_max,
-                                    N_max=R_max)
+        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=K, alpha=alpha, L_max=L_max,
+                                    N_max=N_max)
         solution, _ = prog.solve()
         if 'infeasible' in solution.get_status_string():
             raise ValueError("Not all graphs allow for a solution of the repeater allocation problem for the"
@@ -336,34 +437,6 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
 
 if __name__ == "__main__":
 
-    results = RandomGraphScan(scan_param_name="k",
-                              scan_param_min=1,
-                              scan_param_max=6,
-                              scan_param_step=1,
-                              num_graphs=0,
-                              num_nodes=25,
-                              radius=0.9,
-                              alpha=1 / 250,
-                              L_max=0.9,
-                              R_max=6,
-                              D=4,
-                              k=6)
-    # results.solve()
-    filename = "effect_of_k_v4.p"
-    results.save(filename)
-    # results = pickle.load(open(filename, "rb"))
-    other_filename = "effect_of_Lmax_v4.p"
-    other_results = pickle.load(open(other_filename, "rb"))
-    results.add_graphs_from_other_random_graph_scan(other_results)
-    results.save(filename)
-    results.solve()
-    results.save(filename)
-    # for _ in range(99):
-    #     results.generate_new_graphs(10)
-    #     results.solve()
-    #     results.save(filename)
+    computation_time_vs_number_of_nodes(n_min=10, n_max=110, n_step=10, num_graphs=100, radius=0.9, L_max=1, N_max=6,
+                                        D=8, K=2, alpha=0)
 
-    # plot_random_graph_scan(random_graph_scan=results,
-    #                       quantity="min_node_connectivity",
-    #                       ylabel="Average Node Connectivity")
-    print(results.computation_time)
