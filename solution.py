@@ -11,9 +11,9 @@ class Solution:
         self.feasible = "infeasible" not in self.get_status_string()
         if not self.parameters:
             return
-        # self.x_variables_chosen, self.repeater_nodes_chosen = self._interpret_variables()
-        # self.path_data = self._process_x_variables()
-        # self._create_virtual_solution_graph()
+        self.x_variables_chosen, self.repeater_nodes_chosen = self._interpret_variables()
+        self.path_data = self._process_x_variables()
+        self._create_virtual_solution_graph()
 
     def _setup_solution(self):
         """Parse the solution of the formulation."""
@@ -268,7 +268,6 @@ class Solution:
         pos = nx.get_node_attributes(self.formulation.graph_container.graph, 'pos')
         labels = {}
         for node, nodedata in self.formulation.graph_container.graph.nodes.items():
-            # labels[node] = node
             if node in self.formulation.graph_container.end_nodes:
                 labels[node] = node
             else:
@@ -280,20 +279,20 @@ class Solution:
                                            nodelist=self.formulation.graph_container.end_nodes,
                                            node_shape='s', node_color=[[255 / 255, 120 / 255, 0 / 255]],
                                            label="End Node", linewidths=3)
-        end_nodes.set_edgecolor('K')
+        end_nodes.set_edgecolor('k')
         # Then draw the repeater nodes
         if self.repeater_nodes_chosen:
             rep_nodes = nx.draw_networkx_nodes(G=self.formulation.graph_container.graph, pos=pos, node_size=1500,
                                                node_shape='h', nodelist=self.repeater_nodes_chosen,
                                                node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node",
                                                linewidths=3)
-            rep_nodes.set_edgecolor('K')
+            rep_nodes.set_edgecolor('k')
         # Then draw the link-extension nodes
         if self.link_extension_nodes:
             le_nodes = nx.draw_networkx_nodes(G=self.formulation.graph_container.graph, pos=pos, node_size=1500,
                                               nodelist=self.link_extension_nodes, node_color=[[1, 1, 1]],
                                               label="Link Extension")
-            le_nodes.set_edgecolor('K')
+            le_nodes.set_edgecolor('k')
         # Also draw all the unused nodes
         unused_nodes = []
         [unused_nodes.append(n) for n in self.formulation.graph_container.graph.nodes() if
@@ -302,13 +301,13 @@ class Solution:
         if unused_nodes:
             unu_nodes = nx.draw_networkx_nodes(G=self.formulation.graph_container.graph, pos=pos, node_size=1500,
                                                nodelist=unused_nodes, node_color=[[1, 1, 1]])
-            unu_nodes.set_edgecolor('K')
+            unu_nodes.set_edgecolor('k')
         # Draw the unused edges but less visible
         nx.draw_networkx_edges(G=self.formulation.graph_container.graph, pos=pos, edgelist=self.unused_edges,
                                edge_color=[[170 / 255, 170 / 255, 170 / 255]], width=1)
         # Draw the used edges
         nx.draw_networkx_edges(G=self.formulation.graph_container.graph, pos=pos, edgelist=self.used_edges, width=8,
-                               edge_color=[[0 / 255, 166 / 255, 214 / 255]])
+                               edge_color=[[0 / 255, 0 / 255, 0 / 255]])
         # Draw all the node labels
         nx.draw_networkx_labels(G=self.formulation.graph_container.graph, pos=pos, labels=labels, font_size=30,
                                 font_weight="bold", font_color="w", font_family='serif')

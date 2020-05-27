@@ -251,7 +251,7 @@ class LinkBasedFormulation(Formulation):
                                                                      names=["x" + pairname + "_" + str(i) + "," + str(j)
                                                                            + '#' + str(k)])
                                 # Add it to our variable map for future reference
-                                # self.varmap[cplex_var[0]] = (q, sp, path_cost)
+                                self.varmap[cplex_var[0]] = (q, sp, path_cost)
 
 
 class PathBasedFormulation(Formulation):
