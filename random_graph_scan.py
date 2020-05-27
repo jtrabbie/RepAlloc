@@ -57,7 +57,7 @@ class RandomGraphScan:
         self.range = np.linspace(start=scan_param_min,
                                  stop=scan_param_max,
                                  num=num_data_points)
-        self.num_graphs = 0
+        # self.num_graphs = 0
         self.num_nodes = num_nodes
         self.radius = radius
         self.L_max = L_max
@@ -68,7 +68,6 @@ class RandomGraphScan:
         self.graphs = []
         self.solutions_data = {}
         self.computation_time = 0
-        self.all_solved = False
         self.most_restrictive_parameters = {"L_max": L_max,
                                             "R_max": R_max,
                                             "D": D,
@@ -88,9 +87,9 @@ class RandomGraphScan:
                              .format(scan_param_name))
 
         # generate population of graphs which are feasible for most restrictive values
-        self.add_graphs(num_graphs)
+        self.generate_new_graphs(num_graphs)
 
-    def add_graphs(self, num_extra_graphs):
+    def generate_new_graphs(self, num_extra_graphs):
         """Increase graph population. Requires solve to be called again.
 
         Parameters
@@ -106,7 +105,7 @@ class RandomGraphScan:
         """
 
         print("adding {} graphs".format(num_extra_graphs))
-        self.num_graphs += num_extra_graphs
+        # self.num_graphs += num_extra_graphs
         start_time = time.time()
         new_graphs, new_solutions = generate_feasible_graphs(num_graphs=num_extra_graphs,
                                                              num_nodes=self.num_nodes,
@@ -123,10 +122,40 @@ class RandomGraphScan:
         print("Adding {} graphs succeeded after {} seconds.".format(num_extra_graphs, calculation_time))
         self.computation_time += calculation_time
         assert len(self.solutions_data[self.most_restrictive_parameters[self.scan_param_name]]) == self.num_graphs
-        self.all_solved = False
 
-    def solve(self):
+    def add_graphs_from_other_random_graph_scan(self, other_random_graph_scan, overwrite=False):
+        """Add graphs from another instance of RandomGraphScan, so they can be reused.
+
+        Parameters
+        ----------
+        other_random_graph_scan : RandomGraphScan instance
+            Object holding the graphs which you want to add to this object.
+        overwrite : bool
+            If true, existing graphs are removed when adding the new graphs. All existing solutions are deleted.
+        """
+        if not isinstance(other_random_graph_scan, RandomGraphScan):
+            raise TypeError("Can only add graphs from a RandomGraphScan object.")
+        if self.num_nodes != other_random_graph_scan.num_nodes:
+            raise TypeError("Can only add graphs fi the other RandomGraphsScan object has the same number of nodes.")
+        if self.radius != other_random_graph_scan.radius:
+            raise TypeError("Can only add graphs fi the other RandomGraphsScan object has the same radius.")
+        if self.most_restrictive_parameters != other_random_graph_scan.most_restrictive_parameters:
+            raise TypeError("Can only add graphs if the other RandomGraphScan object has the same set of most "
+                            "restrictive values.")
+        print("Adding {} graphs!".format(other_random_graph_scan.num_graphs))
+        if not overwrite:
+            self.graphs += other_random_graph_scan.graphs
+        else:
+            self.graphs = other_random_graph_scan.graphs
+            self.solutions_data = {}
+
+    def solve(self, overwrite=False):
         """Find the solutions. Can be computationally heavy.
+
+        Parameters
+        ----------
+        overwrite : bool
+            If true, existing solutions are discarded, and all graphs are solved again for each data point.
 
         Note
         ----
@@ -136,7 +165,7 @@ class RandomGraphScan:
 
         parameters = deepcopy(self.most_restrictive_parameters)
         for value in self.range:
-            if value in self.solutions_data.keys():
+            if value in self.solutions_data.keys() and not overwrite:
                 solutions_data_this_value = self.solutions_data[value]
                 num_missing_solutions = self.num_graphs - len(solutions_data_this_value)
             else:
@@ -148,17 +177,16 @@ class RandomGraphScan:
                 # skip if all solutions are already present for this parameter value
                 parameters.update({self.scan_param_name: value})
                 graphs_without_solution = self.graphs[-num_missing_solutions:]
-                new_solutions = solve_graphs(graph_containers=graphs_without_solution,
-                                             alpha=self.alpha,
-                                             **parameters)
-                solutions_data_this_value += [new_solution.get_solution_data() for new_solution in new_solutions]
+                for graph in graphs_without_solution:
+                    [new_solution] = solve_graphs(graph_containers=[graph],
+                                                  alpha=self.alpha,
+                                                  **parameters)
+                    solutions_data_this_value.append(new_solution.get_solution_data())
             calculation_time = time.time() - start_time
             print("Solving {} graphs succeeded after {} seconds.".format(num_missing_solutions, calculation_time))
             self.computation_time += calculation_time
             assert len(solutions_data_this_value) == self.num_graphs
             self.solutions_data.update({value: solutions_data_this_value})
-
-        self.all_solved = True
 
     def save(self, save_name):
         """Save object as pickle.
@@ -176,6 +204,10 @@ class RandomGraphScan:
         """
 
         pickle.dump(self, open(save_name, "wb"))
+
+    @property
+    def num_graphs(self):
+        return len(self.graphs)
 
 
 def plot_random_graph_scan(random_graph_scan, quantity, ylabel):
@@ -246,7 +278,7 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
     number_of_tries = 0
     while number_of_found_graphs < num_graphs:
         number_of_tries += 1
-        if number_of_tries == 100 and number_of_found_graphs == 0:
+        if number_of_tries == 10000 and number_of_found_graphs == 0:
             raise RuntimeError("Could not find a feasible graph in 100 tries.")
         graph = create_graph_and_partition(num_nodes=num_nodes, radius=radius, draw=False)
         if graph is None:
@@ -304,48 +336,34 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
 
 if __name__ == "__main__":
 
-    res = pickle.load(open("k_1_6_D_4_v2.p", "rb"))
-    print(res.num_nodes, res.L_max, res.R_max, res.D, res.k, res.scan_param_name, res.radius)
-    first_key = list(res.solutions_data.keys())[0]
-    num_data_points = len(res.solutions_data[first_key])
-    print(res.computation_time / (num_data_points * len(list(res.solutions_data.keys()))))
-    print("num data points:", num_data_points)
-    for key in res.solutions_data.keys():
-        num_reps = []
-        min_node_con = []
-        for i in range(num_data_points):
-            # print(res.solutions_data[key][i]['num_reps'])
-            num_reps.append(res.solutions_data[key][i]['num_reps'])
-            min_node_con.append(res.solutions_data[key][i]['min_node_connectivity'])
-        print("{} = {}, avg_n_reps = {}, std_n_reps = {}, avg_mnc = {}, std_mnc = {}".format(res.scan_param_name, key,
-                                                                                             np.mean(num_reps),
-                                                                                             np.std(num_reps),
-                                                                                             np.mean(min_node_con),
-                                                                                             np.std(min_node_con)))
-    # pd.DataFrame(res.solutions_data).to_csv("effect_of_D.csv", sep="\t", index=False)
-    # results = RandomGraphScan(scan_param_name="L_max",
-    #           scan_param_min=0.5,
-    #           scan_param_max=1.2,
-    #           scan_param_step=.1,
-    #           num_graphs=50,
-    #           num_nodes=25,
-    #           radius=0.9,
-    #           alpha=1 / 250,
-    #           L_max=1,
-    #           R_max=6,
-    #           D=8,
-    #           k=2)
+    results = RandomGraphScan(scan_param_name="k",
+                              scan_param_min=1,
+                              scan_param_max=6,
+                              scan_param_step=1,
+                              num_graphs=0,
+                              num_nodes=25,
+                              radius=0.9,
+                              alpha=1 / 250,
+                              L_max=0.9,
+                              R_max=6,
+                              D=4,
+                              k=6)
     # results.solve()
-    # results.save("results.p")
-    # filename = "effect_of_k.p"
+    filename = "effect_of_k_v4.p"
+    results.save(filename)
     # results = pickle.load(open(filename, "rb"))
-    # # print(results.num_graphs)
-    # for _ in range(1):
-    # # plot_num_repeaters(effect_of_Lmax)
-    #    results.add_graphs(50)
-    #    results.solve()
-    #    results.save(filename)
-    #    #plot_random_graph_scan(random_graph_scan=effect_of_Lmax,
-    #    #                       quantity="min_node_connectivity",
-    #    #                       ylabel="Average Node Connectivity")
-    #    print(results.computation_time)
+    other_filename = "effect_of_Lmax_v4.p"
+    other_results = pickle.load(open(other_filename, "rb"))
+    results.add_graphs_from_other_random_graph_scan(other_results)
+    results.save(filename)
+    results.solve()
+    results.save(filename)
+    # for _ in range(99):
+    #     results.generate_new_graphs(10)
+    #     results.solve()
+    #     results.save(filename)
+
+    # plot_random_graph_scan(random_graph_scan=results,
+    #                       quantity="min_node_connectivity",
+    #                       ylabel="Average Node Connectivity")
+    print(results.computation_time)
