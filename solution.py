@@ -309,6 +309,9 @@ class Solution:
         nx.draw_networkx_edges(G=self.formulation.graph_container.graph, pos=pos, edgelist=self.used_edges, width=8,
                                edge_color=[[0 / 255, 0 / 255, 0 / 255]])
         # Draw all the node labels
+        # label_pos = {city: [pos[city][0], pos[city][1] - 0.07] for city in pos}
+        # nx.draw_networkx_labels(G=self.program.graph_container.graph, pos=label_pos, labels=labels, font_size=11,
+        #                         font_weight="bold")
         nx.draw_networkx_labels(G=self.formulation.graph_container.graph, pos=pos, labels=labels, font_size=30,
                                 font_weight="bold", font_color="w", font_family='serif')
         plt.axis('off')
