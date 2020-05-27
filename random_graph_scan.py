@@ -1,4 +1,4 @@
-from programs import NodeDisjointLinkBasedProgram
+from formulations import LinkBasedFormulation
 from graph_tools import GraphContainer, create_graph_and_partition
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,6 +7,7 @@ import pickle
 import networkx as nx
 from copy import deepcopy
 import time
+import pandas as pd
 
 
 class RandomGraphScan:
@@ -286,8 +287,8 @@ def generate_feasible_graphs(num_graphs, num_nodes, radius, alpha, L_max, R_max,
         if not nx.is_connected(graph):
             continue
         graph_container = GraphContainer(graph)
-        prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
-                                            R_max=R_max)
+        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=k, alpha=alpha, L_max=L_max,
+                                    N_max=R_max)
         solution, _ = prog.solve()
         if 'infeasible' in solution.get_status_string():
             continue
@@ -323,8 +324,8 @@ def solve_graphs(graph_containers, alpha, L_max, R_max, D, k):
     """
     solutions = []
     for graph_container in graph_containers:
-        prog = NodeDisjointLinkBasedProgram(graph_container=graph_container, D=D, k=k, alpha=alpha, L_max=L_max,
-                                            R_max=R_max)
+        prog = LinkBasedFormulation(graph_container=graph_container, D=D, K=k, alpha=alpha, L_max=L_max,
+                                    N_max=R_max)
         solution, _ = prog.solve()
         if 'infeasible' in solution.get_status_string():
             raise ValueError("Not all graphs allow for a solution of the repeater allocation problem for the"
@@ -366,4 +367,3 @@ if __name__ == "__main__":
     #                       quantity="min_node_connectivity",
     #                       ylabel="Average Node Connectivity")
     print(results.computation_time)
-
