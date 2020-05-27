@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import fsolve
 
-speed_of_light_in_fiber = 204190.477  # km / s
+speed_of_light_in_fiber = 2e5  # km / s
 attenuation_length = 22  # km
 
 
@@ -23,11 +23,11 @@ def fidelity(elementary_link_fidelity, number_of_repeaters):
 def solve_number_of_repeaters(elementary_link_fidelity, target_fidelity):
 
     def f(number_of_repeaters):
-        calculated_fidelity = fidelity(elementary_link_fidelity=elementary_link_fidelity, number_of_repeaters=number_of_repeaters)
+        calculated_fidelity = fidelity(elementary_link_fidelity=elementary_link_fidelity,
+                                       number_of_repeaters=number_of_repeaters)
         return calculated_fidelity - target_fidelity
 
-    number_of_repeaters = fsolve(func=f, x0=1)
-    # return number_of_repeaters
+    number_of_repeaters = fsolve(func=f, x0=np.array(1))
     return np.floor(number_of_repeaters)
 
 
@@ -40,31 +40,23 @@ def solve_rate(number_of_repeaters, number_of_modes, swap_probability, target_ra
                                number_of_modes=number_of_modes)
         return calculated_rate - target_rate
 
-    elementary_link_length = fsolve(func=f, x0=50)
+    elementary_link_length = fsolve(func=f, x0=np.array(50))
     return np.floor(elementary_link_length)
 
 
 def max_length_and_rate(target_fidelity, target_rate, elementary_link_fidelity, number_of_modes, swap_probability):
 
-    [Rmax] = solve_number_of_repeaters(elementary_link_fidelity=elementary_link_fidelity,
+    [Nmax] = solve_number_of_repeaters(elementary_link_fidelity=elementary_link_fidelity,
                                        target_fidelity=target_fidelity)
-    [Lmax] = solve_rate(number_of_repeaters=Rmax,
+    [Lmax] = solve_rate(number_of_repeaters=Nmax,
                         target_rate=target_rate,
                         number_of_modes=number_of_modes,
                         swap_probability=swap_probability)
 
     print("Requirements\n\ntarget_fidelity: {}\ntarget_rate: {} Hz\n\n"
           "Parameters\n\nelementary_link_fidelity: {}\nnumber_of_modes: {}\nswap_probability: {}\n\n"
-          "Results\n\nLmax = {} km\nRmax = {} \n\n"
-          .format(target_fidelity, target_rate, elementary_link_fidelity, number_of_modes, swap_probability, Lmax, Rmax))
+          "Results\n\nLmax = {} km\nNmax = {} \n\n"
+          .format(target_fidelity, target_rate, elementary_link_fidelity, number_of_modes, swap_probability,
+                  Lmax, Nmax))
 
-    return Lmax, Rmax
-
-
-if __name__ == "__main__":
-
-    max_length_and_rate(target_fidelity=0.93,
-                        target_rate=1,
-                        elementary_link_fidelity=0.99,
-                        number_of_modes=1000,
-                        swap_probability=.5)
+    return Lmax, Nmax

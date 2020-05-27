@@ -1,6 +1,6 @@
 from formulations import PathBasedFormulation, LinkBasedFormulation
 from graph_tools import GraphContainer, create_graph_and_partition, read_graph_from_gml, create_graph_on_unit_cube
-from determine_Lmax_Rmax import max_length_and_rate
+from determine_Lmax_Nmax import max_length_and_rate
 import numpy as np
 
 
