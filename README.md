@@ -1,6 +1,6 @@
 # RepAlloc
 Code for the optimization of quantum repeater placement with the use of existing fiber infrastructure.
-Our paper with background information can be found here.
+Our paper with background information can be found [here](https://arxiv.org/abs/2005.14715).
 
 The linear programming solver used is [CPLEX](http://www.cplex.com), which need to be installed in order to use the Python API and run the code. Free academic research licenses are available. Other requirements are NetworkX and Numpy.
 

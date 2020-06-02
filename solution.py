@@ -9,7 +9,7 @@ class Solution:
         self.formulation = formulation
         self.parameters, self.overall_data = self._setup_solution()
         self.feasible = "infeasible" not in self.get_status_string()
-        if not self.parameters:
+        if not self.feasible:
             return
         self.x_variables_chosen, self.repeater_nodes_chosen = self._interpret_variables()
         self.path_data = self._process_x_variables()
@@ -18,26 +18,23 @@ class Solution:
     def _setup_solution(self):
         """Parse the solution of the formulation."""
         sol_status = self.get_status_string()
-        parameters = {}
-        overall_data = {}
         if 'infeasible' in sol_status:
             print("Solution is infeasible!")
         elif 'optimal' not in sol_status:
             print("Invalid solution status (?): {}".format(sol_status))
-        else:
-            parameters = {"L_max": self.formulation.L_max,
-                          "N_max": self.formulation.N_max,
-                          "K": self.formulation.K,
-                          "D": self.formulation.D,
-                          "alpha": self.formulation.alpha,
-                          }
-            overall_data = {"opt_obj_val": cplex.infinity,
-                            "num_reps": 0,
-                            "tot_path_cost": 0,
-                            "avg_path_len": 0,
-                            "tot_num_el": 0,
-                            "repeater_node_degree": {}
-                            }
+        parameters = {"L_max": self.formulation.L_max,
+                      "N_max": self.formulation.N_max,
+                      "K": self.formulation.K,
+                      "D": self.formulation.D,
+                      "alpha": self.formulation.alpha,
+                      }
+        overall_data = {"opt_obj_val": cplex.infinity,
+                        "num_reps": 0,
+                        "tot_path_cost": 0,
+                        "avg_path_len": 0,
+                        "tot_num_el": 0,
+                        "repeater_node_degree": {}
+                        }
         return parameters, overall_data
 
     def _interpret_variables(self):
@@ -75,7 +72,7 @@ class Solution:
         if opt_obj_val - len(repeater_nodes_chosen) > 1:
             print("WARNING: value of alpha too large, influenced objective function! Optimal objective value: {}, "
                   "number of repeaters: {}".format(opt_obj_val, len(repeater_nodes_chosen)))
-        self.overall_data['opt_obj_val'] = opt_obj_val
+        self.overall_data['opt_obj_val'] = round(opt_obj_val, 3)
         return x_variables_chosen, repeater_nodes_chosen
 
     def _process_x_variables(self):
@@ -107,45 +104,38 @@ class Solution:
                 local_dict['repeater_nodes_used'] = repeater_nodes_used
                 local_dict['path_cost'] = cost_per_path
             else:
-                # We are processing a link-based formulation
+                # We are processing a link-based formulation, so apply the path-extraction algorithm
                 elementary_links_current_pair = [tup for tup in self.x_variables_chosen if tup[0] == q]
-                # Remove cyclic paths from solution, which can occur if alpha is set to zero
-                for el1 in elementary_links_current_pair:
-                    for el2 in elementary_links_current_pair:
-                        if el1[1][-1] == el2[1][0] and el1[1][0] == el2[1][-1]:
-                            elementary_links_current_pair.remove(el1)
-                            elementary_links_current_pair.remove(el2)
-                num_el = len(elementary_links_current_pair)
-                tot_num_el += num_el
                 for _ in range(self.formulation.K):
-                    path = [None]
+                    path = [q[0]]  # Every path should start at s
                     old_len_rep_nodes = len(repeater_nodes_used)
                     rep_nodes_current_path = []
                     num_el_current_path = 0
                     cost_current_path = 0
                     while path[-1] != q[1]:
                         for edge in elementary_links_current_pair:
-                            if len(path) == 1 and edge[1][0] == q[0]:  # Initial edge from source
-                                path.remove(path[0])
-                                path.extend(edge[1])
-                                cost_current_path += edge[2]
-                                num_el_current_path += 1
-                                elementary_links_current_pair.remove(edge)
-                            elif len(path) > 1 and edge[1][0] == path[-1]:  # Extension of current path
-                                rep_nodes_current_path.append(path[-1])
-                                repeater_node_degree[path[-1]] += 1
+                            if edge[1][0] == path[-1]:
+                                if edge[1][-1] != q[1]:
+                                    rep_nodes_current_path.append(edge[1][-1])
+                                    repeater_node_degree[edge[1][-1]] += 1
                                 path = path[0:-1]
                                 path.extend(edge[1])
                                 cost_current_path += edge[2]
                                 num_el_current_path += 1
                                 elementary_links_current_pair.remove(edge)
+                                break
                     num_el_used.append([num_el_current_path])
                     cost_per_path.append([cost_current_path])
                     total_cost += cost_current_path
+                    tot_num_el += num_el_current_path
                     repeater_nodes_used.append(rep_nodes_current_path)
                     if len(repeater_nodes_used) == old_len_rep_nodes:
                         repeater_nodes_used.append([])
                     paths.append(path)
+                if len(elementary_links_current_pair) > 0:
+                    print("Solution contained a cyclic path for pair {}, which is excluded:"
+                          .format(q))
+                    print([t[1] for t in elementary_links_current_pair])
                 local_dict = path_data[(q[0], q[1])]
                 local_dict['paths'] = paths
                 local_dict['num_el_used'] = num_el_used

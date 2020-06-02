@@ -9,7 +9,8 @@ from solution import Solution
 class Formulation:
     """
     Base class for a integer linear program (ILP) formulation for solving repeater allocation.
-    This is subclassed to construct both the link- and path-based formulations.
+    This is subclassed to construct both the link- and path-based formulations, which are described
+    in https://arxiv.org/abs/2005.14715.
 
     Parameters
     ----------
@@ -133,7 +134,7 @@ class Formulation:
 
 
 class LinkBasedFormulation(Formulation):
-    """Subclass for the link-based formulation, which can be found in TODO: add paper reference."""
+    """Subclass for the link-based formulation."""
     def __init__(self, graph_container, N_max, L_max, K, D, alpha, read_from_file=False):
         super().__init__(graph_container=graph_container, N_max=N_max, L_max=L_max, D=D, K=K, alpha=alpha,
                          read_from_file=read_from_file)
@@ -255,7 +256,7 @@ class LinkBasedFormulation(Formulation):
 
 
 class PathBasedFormulation(Formulation):
-    """Subclass for the path-based formulation, which can be found in TODO: add paper reference."""
+    """Subclass for the path-based formulation."""
     def __init__(self, graph_container, L_max, N_max, K, D, alpha, read_from_file=False):
         super().__init__(graph_container=graph_container, L_max=L_max, N_max=N_max, K=K,
                          D=D, alpha=alpha, read_from_file=read_from_file, )
