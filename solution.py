@@ -230,14 +230,14 @@ class Solution:
                                            node_shape='s', node_color=[[255 / 255, 120 / 255, 0 / 255]],
                                            label="End Node",
                                            linewidths=3)
-        end_nodes.set_edgecolor('k')
+        end_nodes.set_edgecolor('K')
         # Then draw the repeater nodes
         if self.repeater_nodes_chosen:
             rep_nodes = nx.draw_networkx_nodes(G=self.virtual_solution_graph, pos=pos, node_size=1500,
                                                node_shape='h', nodelist=self.repeater_nodes_chosen,
                                                node_color=[[0 / 255, 166 / 255, 214 / 255]], label="Repeater Node",
                                                linewidths=3)
-            rep_nodes.set_edgecolor('k')
+            rep_nodes.set_edgecolor('K')
         # Finally draw the elementary links
         nx.draw_networkx_edges(G=self.virtual_solution_graph, pos=pos, edgelist=self.used_elementary_links, width=8)
         # Draw all the node labels
