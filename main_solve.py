@@ -13,7 +13,7 @@ def solve_from_gml(filename, L_max, N_max, D, K, alpha):
     print(sol.get_solution_data())
     print(sol.get_parameters())
     sol.print_path_data()
-    # sol.draw_physical_solution_graph()
+    sol.draw_physical_solution_graph()
     # sol.draw_virtual_solution_graph()
 
 
@@ -48,8 +48,8 @@ def compare_formulations():
         n = np.random.randint(15, 25)
         seed = np.random.randint(1, 1e5)
         alpha = 1 / 100
-        print(D, K, L_max, N_max, n, seed)
-        G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=True, seed=seed)
+        print("D = {}, K = {}, L_max = {}, N_max = {}, n = {}, seed = {}".format(D, K, L_max, N_max, n, seed))
+        G = create_graph_and_partition(num_nodes=n, radius=0.7, draw=False, seed=seed)
         link_based_form = LinkBasedFormulation(graph_container=GraphContainer(G), L_max=L_max, N_max=N_max, D=D, K=K,
                                                alpha=alpha)
         sol_LBF, _ = link_based_form.solve()
@@ -58,7 +58,8 @@ def compare_formulations():
                                                alpha=alpha)
         sol_PBF, _ = path_based_form.solve()
         data_PBF = sol_PBF.get_solution_data()
-        if data_LBF != data_PBF:
+        # We are only minimizing repeater placement and the path costs in this case, not repeater *usage*
+        if any(data_LBF[k] != data_PBF[k] for k in ['opt_obj_val', 'num_reps', 'tot_path_cost']):
             print("LBF and PBF give different solutions! (This should never happen as they must be equivalent)")
             print("LBF:", data_LBF)
             print(sol_LBF.print_path_data())
@@ -92,9 +93,8 @@ def surfnet_solve():
 
 
 if __name__ == "__main__":
-    pass
     surfnet_solve()
-    # solve_from_gml("Surfnet.gml", L_max=60, N_max=11, D=100, K=1, alpha=1 / 2500)
+    # solve_from_gml("Colt.gml", L_max=900, N_max=6, D=100, K=1, alpha=1 / 75000)
     # solve_on_unit_cube(L_max=0.9, N_max=3, D=6, K=1)
     # solve_with_random_graph()
     # compare_formulations()
